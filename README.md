@@ -14,8 +14,11 @@ A memory system that never forgets. Persistent fractal memory for Claude Code.
 - **Persistent Storage** - Memories survive across sessions, stored locally in LanceDB
 - **Smart Import** - Import your Claude.ai memory export with one command
 - **Auto-Save** - Saves memories at session end and before context compaction
-- **Fractal Synthesis** - Automatically consolidates raw memories into higher-level insights
+- **Auto-Deduplication** - Duplicate memories are automatically detected and merged (85% similarity threshold)
+- **Fractal Synthesis** - Automatically consolidates raw memories into higher-level insights via `/synthesize`
+- **Auto-Synthesis** - Synthesis triggers automatically when unsynthesized memories exceed threshold
 - **Proactive Memory** - Claude searches and saves automatically, no prompting needed
+- **Immediate Core Memory Updates** - Family, work, and identity changes update Core Memory instantly
 - **Quiet Operation** - Memory operations happen silently in the background
 - **Local-First** - No external services, no API keys, your data stays on your machine
 
@@ -44,9 +47,9 @@ pip uninstall oubli
 
 | Component | Location | Description |
 |-----------|----------|-------------|
-| MCP Server | `claude mcp` | 13 memory tools (save, search, synthesize, etc.) |
+| MCP Server | `claude mcp` | 15 memory tools (save, search, synthesize, etc.) |
 | Hooks | `~/.claude/settings.json` | UserPromptSubmit, PreCompact, Stop |
-| Slash Command | `~/.claude/commands/` | `/clear-memories` |
+| Slash Commands | `~/.claude/commands/` | `/clear-memories`, `/synthesize` |
 | Instructions | `~/.claude/CLAUDE.md` | How Claude should use the memory system |
 | Data | `~/.oubli/` | LanceDB database + Core Memory file |
 
@@ -71,6 +74,7 @@ Just talk naturally:
 ### Slash Commands
 
 - `/clear-memories` - Clear all memories (requires confirmation)
+- `/synthesize` - Run full synthesis workflow: merge duplicates, create insights, update Core Memory
 
 ## How It Works
 
@@ -103,12 +107,12 @@ All data is stored locally in `~/.oubli/`:
 
 ## MCP Tools
 
-Oubli provides 13 MCP tools for memory operations:
+Oubli provides 15 MCP tools for memory operations:
 
 | Tool | Description |
 |------|-------------|
-| `memory_save` | Save a new memory |
-| `memory_search` | Search memories (prefers higher-level insights) |
+| `memory_save` | Save a new memory (auto-deduplicates) |
+| `memory_search` | Search memories by BM25 full-text search |
 | `memory_get` | Get full details including conversation text |
 | `memory_get_parents` | Drill down from synthesis to source memories |
 | `memory_list` | List memories by level |
@@ -116,8 +120,10 @@ Oubli provides 13 MCP tools for memory operations:
 | `memory_update` | Update an existing memory |
 | `memory_delete` | Delete a memory |
 | `memory_import` | Bulk import memories |
+| `memory_synthesis_needed` | Check if synthesis should run |
+| `memory_prepare_synthesis` | Merge duplicates and get groups for synthesis |
 | `memory_synthesize` | Create Level 1+ insight from raw memories |
-| `memory_get_synthesis_candidates` | Find topics ready for synthesis |
+| `memory_dedupe` | Manual duplicate cleanup |
 | `core_memory_get` | Get Core Memory content |
 | `core_memory_save` | Save Core Memory content |
 

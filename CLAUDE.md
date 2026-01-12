@@ -30,9 +30,9 @@ oubli setup
 Then restart Claude Code.
 
 The setup command installs:
-1. **MCP server** - Registered via `claude mcp add`
-2. **Hooks** - Written to `~/.claude/settings.json`
-3. **Slash command** - `/clear-memories` copied to `~/.claude/commands/`
+1. **MCP server** - Registered via `claude mcp add` (15 tools)
+2. **Hooks** - Written to `~/.claude/settings.json` (UserPromptSubmit, PreCompact, Stop)
+3. **Slash commands** - `/clear-memories` and `/synthesize` copied to `~/.claude/commands/`
 4. **CLAUDE.md** - Instructions copied to `~/.claude/CLAUDE.md`
 5. **Data directory** - `~/.oubli/` created
 
@@ -44,34 +44,36 @@ To uninstall: `oubli uninstall && pip uninstall oubli`
 src/oubli/
 ├── __init__.py
 ├── cli.py              # CLI with setup/uninstall commands
-├── mcp_server.py       # MCP tools for Claude Code
-├── storage.py          # LanceDB-backed memory storage
+├── mcp_server.py       # MCP tools for Claude Code (15 tools)
+├── storage.py          # LanceDB-backed memory storage with FTS + deduplication
 ├── core_memory.py      # Core memory file operations
 └── data/
     ├── CLAUDE.md       # Instructions installed to ~/.claude/
     └── commands/
-        └── clear-memories.md  # /clear-memories slash command
+        ├── clear-memories.md  # /clear-memories slash command
+        └── synthesize.md      # /synthesize skill
 ```
 
 ## Key Files
 
-- `src/oubli/storage.py` - LanceDB-backed MemoryStore with Memory dataclass
+- `src/oubli/storage.py` - LanceDB-backed MemoryStore with Memory dataclass, FTS search, deduplication
 - `src/oubli/core_memory.py` - Core memory file operations
-- `src/oubli/mcp_server.py` - MCP tools for Claude Code integration
+- `src/oubli/mcp_server.py` - MCP tools for Claude Code integration (15 tools)
 - `src/oubli/cli.py` - CLI with setup/uninstall commands and hook support
-- `SPEC.md` - Full specification document (source of truth for features)
+- `src/oubli/data/CLAUDE.md` - Instructions for Claude on using the memory system
+- `SPEC_v2.md` - Full specification document (source of truth for features)
 
-## MCP Tools (13 total)
+## MCP Tools (15 total)
 
 ### Retrieval (Fractal Drill-Down)
-- `memory_search` - Search summaries, prefers higher levels, returns parent_ids
+- `memory_search` - BM25 FTS search on summaries, prefers higher levels
 - `memory_get_parents` - Get parent memory summaries for drill-down
 - `memory_get` - Get full details INCLUDING full_text (final drill-down)
 - `memory_list` - List memories by level (summaries only)
 - `memory_stats` - Get statistics
 
 ### Storage
-- `memory_save` - Save a new memory with summary + full_text
+- `memory_save` - Save a new memory with auto-deduplication (85% Jaccard threshold)
 - `memory_import` - Bulk import pre-parsed memories
 
 ### Modification
@@ -79,8 +81,10 @@ src/oubli/
 - `memory_delete` - Delete a memory (for obsolete info)
 
 ### Synthesis
-- `memory_get_synthesis_candidates` - Find topics ready for synthesis
+- `memory_synthesis_needed` - Check if synthesis should run (threshold-based)
+- `memory_prepare_synthesis` - Merge duplicates at level, return groups for synthesis
 - `memory_synthesize` - Create Level 1+ insight from parent memories
+- `memory_dedupe` - Manual duplicate cleanup with dry-run option
 
 ### Core Memory
 - `core_memory_get` - Get core memory content
@@ -89,6 +93,7 @@ src/oubli/
 ## Slash Commands
 
 - `/clear-memories` - Clear all memories from the database (user must confirm)
+- `/synthesize` - Run full synthesis workflow: merge duplicates, create insights, update Core Memory
 
 ## Hooks
 
@@ -96,23 +101,30 @@ src/oubli/
 - **PreCompact** - Saves memories before context compaction (prevents losing info in long sessions)
 - **Stop** - Saves memories at session end
 
-## Current Status
+## Current Status (v0.1.11)
 
 ### Completed
+- PyPI installation (`pip install oubli && oubli setup`)
 - Storage foundation with LanceDB
+- Native BM25 full-text search on summary column (incremental indexing)
+- Auto-deduplication on save (85% Jaccard similarity threshold)
 - Memory dataclass with all fields
 - CRUD operations (add, get, search, update, delete)
 - Core memory file operations
-- MCP server with 13 tools (including synthesis and fractal drill-down)
+- MCP server with 15 tools (including synthesis and fractal drill-down)
 - Session hooks (UserPromptSubmit for core memory, PreCompact + Stop for auto-save)
 - `/clear-memories` slash command
-- Plugin structure with bundled MCP, commands, hooks
-- Proactive memory behavior (search before responding, save automatically)
-- Instructions for Claude in plugin CLAUDE.md
+- `/synthesize` skill for full synthesis workflow
+- `memory_synthesis_needed` for auto-triggering synthesis
+- `memory_prepare_synthesis` for merging duplicates before synthesis
+- Immediate Core Memory updates for fundamental changes (family, work, identity)
+- Instructions for Claude in `src/oubli/data/CLAUDE.md`
 - Fractal drill-down retrieval pattern
 
-### Not Yet Implemented (from SPEC.md)
-- Embeddings for semantic search (currently keyword-only)
+### Not Yet Implemented
+- Embeddings for semantic search (using BM25 FTS for now)
+- Web UI for browsing memories
+- Memory graph visualization
 
 ## Development Commands
 

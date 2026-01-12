@@ -137,7 +137,7 @@ def setup():
     click.echo("\n" + "=" * 55)
     click.echo("Setup complete!")
     click.echo("\nWhat was installed:")
-    click.echo("  - MCP server: oubli (14 memory tools)")
+    click.echo("  - MCP server: oubli (15 memory tools)")
     click.echo("  - Hooks: UserPromptSubmit, PreCompact, Stop")
     click.echo("  - Slash commands: /clear-memories, /synthesize")
     click.echo("  - Instructions: ~/.claude/CLAUDE.md")
