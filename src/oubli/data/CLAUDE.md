@@ -90,18 +90,32 @@ Start broad, drill down only when needed.
 
 Core Memory (~2K tokens) is auto-injected into every prompt. It's the user's "essence."
 
-**IMMEDIATELY update Core Memory** (don't wait for synthesis) when user reveals:
-- Identity changes: name, location, new relationship status
-- Major life events: new job, promotion, moved cities, had a child
-- Fundamental preferences that affect most interactions
+### ALWAYS update Core Memory immediately for:
 
-**How to update**:
-1. Get current: `core_memory_get()`
-2. Modify the relevant section
-3. Save: `core_memory_save(updated_content)`
+**Family** (any info about relatives):
+- "My father is Anders" → Add to Family section
+- "I have a sister named..." → Add to Family section
+- "My mom lives in..." → Add to Family section
 
-Regular preferences/facts → just `memory_save` (synthesis will consolidate later)
-Fundamental changes → `memory_save` AND immediate `core_memory_save`
+**Work changes** (current project/role):
+- "I'm starting a project for H&M" → Update Work section
+- "I got promoted" → Update Work section
+- "I left Spotify" → Update Work section
+
+**Location/Identity**:
+- "I moved to Berlin" → Update About Me
+- "I got married" → Update Family
+
+### How to update:
+```
+1. core_memory_get() → get current content
+2. Edit the relevant section (add/modify lines)
+3. core_memory_save(updated_content) → save
+```
+
+### Decision rule:
+- Would this info be useful in MOST future conversations? → Update Core Memory
+- Is it a one-off preference or detail? → Just memory_save
 
 ## Tools Quick Reference
 
