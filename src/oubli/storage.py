@@ -14,6 +14,9 @@ import pyarrow as pa
 # Default data directory
 DEFAULT_DATA_DIR = Path.home() / ".oubli"
 
+# Embedding dimensions for all-MiniLM-L6-v2
+EMBEDDING_DIMS = 384
+
 
 @dataclass
 class Memory:
@@ -52,8 +55,12 @@ class Memory:
     # Vector embedding (optional, for semantic search)
     embedding: Optional[list[float]] = None
 
-    def to_dict(self) -> dict:
-        """Convert to dictionary for storage."""
+    def to_dict(self, include_vector: bool = False) -> dict:
+        """Convert to dictionary for storage.
+
+        Args:
+            include_vector: If True, include vector column for hybrid search.
+        """
         d = asdict(self)
         # Convert lists to JSON strings for LanceDB storage
         d['topics'] = json.dumps(d['topics'])
@@ -63,7 +70,9 @@ class Memory:
         # Ensure full_text is never None (use empty string)
         if d['full_text'] is None:
             d['full_text'] = ""
-        # Remove embedding for now - will add with vector search
+        # Handle embedding/vector column
+        if include_vector and d.get('embedding') is not None:
+            d['vector'] = d['embedding']
         del d['embedding']
         return d
 
@@ -80,9 +89,15 @@ class Memory:
             d['parent_ids'] = json.loads(d['parent_ids'])
         if isinstance(d.get('child_ids'), str):
             d['child_ids'] = json.loads(d['child_ids'])
-        # Handle embedding
-        if d.get('embedding') is not None and not isinstance(d['embedding'], list):
+        # Handle embedding/vector column
+        if 'vector' in d:
+            d['embedding'] = list(d['vector']) if d['vector'] is not None else None
+            del d['vector']
+        elif d.get('embedding') is not None and not isinstance(d['embedding'], list):
             d['embedding'] = list(d['embedding'])
+        # Remove any extra fields from LanceDB (like _distance, _relevance_score)
+        known_fields = {f.name for f in cls.__dataclass_fields__.values()}
+        d = {k: v for k, v in d.items() if k in known_fields}
         return cls(**d)
 
 
@@ -96,7 +111,7 @@ class MemoryStats:
 
 
 class MemoryStore:
-    """LanceDB-backed storage for memories."""
+    """LanceDB-backed storage for memories with optional hybrid search."""
 
     TABLE_NAME = "memories"
 
@@ -113,6 +128,17 @@ class MemoryStore:
         db_path = self.data_dir / "memories.lance"
         self.db = lancedb.connect(str(db_path))
 
+        # Try to load embedding model (optional)
+        self._embedding_model = None
+        self._embeddings_available = False
+        try:
+            from .embeddings import get_embedding_model, embeddings_available
+            if embeddings_available():
+                self._embedding_model = get_embedding_model()
+                self._embeddings_available = True
+        except ImportError:
+            pass  # sentence-transformers not installed
+
         # Create or open table
         self._init_table()
 
@@ -120,10 +146,11 @@ class MemoryStore:
         """Initialize the memories table if it doesn't exist."""
         if self.TABLE_NAME in self.db.table_names():
             self.table = self.db.open_table(self.TABLE_NAME)
+            # Check if we need to add vector column to existing table
+            self._ensure_vector_column()
         else:
             # Create table with explicit schema
-            # Need to define types upfront for LanceDB
-            schema = pa.schema([
+            schema_fields = [
                 pa.field("id", pa.string()),
                 pa.field("summary", pa.string()),
                 pa.field("level", pa.int64()),
@@ -139,14 +166,37 @@ class MemoryStore:
                 pa.field("access_count", pa.int64()),
                 pa.field("synthesis_attempts", pa.int64()),
                 pa.field("confidence", pa.float64()),
-                # Skip embedding for now - will add when we implement vector search
-            ])
+            ]
+            # Add vector column if embeddings are available
+            if self._embeddings_available:
+                schema_fields.append(
+                    pa.field("vector", pa.list_(pa.float32(), EMBEDDING_DIMS))
+                )
+
+            schema = pa.schema(schema_fields)
             self.table = self.db.create_table(
                 self.TABLE_NAME,
                 schema=schema,
             )
-            # Create FTS index on summary and full_text for keyword search
+            # Create FTS index on summary for keyword search
             self._ensure_fts_index()
+
+    def _ensure_vector_column(self):
+        """Add vector column to existing table if embeddings are now available."""
+        if not self._embeddings_available:
+            return
+
+        # Check if vector column already exists
+        try:
+            schema = self.table.schema
+            field_names = [f.name for f in schema]
+            if 'vector' not in field_names:
+                # LanceDB supports adding columns via merge
+                # For now, we'll add vectors incrementally on new adds
+                # Existing records will have NULL vectors and use FTS-only search
+                pass
+        except Exception:
+            pass
 
     def _ensure_fts_index(self):
         """Create native FTS index on summary (supports incremental updates)."""
@@ -191,6 +241,14 @@ class MemoryStore:
             if existing:
                 return existing.id
 
+        # Generate embedding if model available and not provided
+        if embedding is None and self._embeddings_available:
+            try:
+                from .embeddings import generate_embedding
+                embedding = generate_embedding(summary)
+            except Exception:
+                pass  # Fall back to no embedding
+
         memory = Memory(
             summary=summary,
             full_text=full_text,
@@ -202,8 +260,16 @@ class MemoryStore:
             embedding=embedding,
         )
 
-        self.table.add([memory.to_dict()])
+        self.table.add([memory.to_dict(include_vector=self._has_vector_column())])
         return memory.id
+
+    def _has_vector_column(self) -> bool:
+        """Check if table has vector column."""
+        try:
+            schema = self.table.schema
+            return any(f.name == 'vector' for f in schema)
+        except Exception:
+            return False
 
     def _find_duplicate(self, summary: str, threshold: float = 0.85) -> Optional[Memory]:
         """Find an existing memory with very similar summary.
@@ -258,10 +324,14 @@ class MemoryStore:
         return [Memory.from_dict(r) for r in results]
 
     def search(self, query: str, limit: int = 10) -> list[Memory]:
-        """Search memories using LanceDB full-text search on summary.
+        """Search memories using hybrid search (FTS + vector) when available.
 
-        Uses BM25-based ranking for relevance scoring.
-        Searches summary field which contains the key information.
+        When embeddings are available, uses hybrid search combining:
+        - BM25 full-text search on summary (keyword matches)
+        - Vector similarity search (semantic matches)
+        - RRF (Reciprocal Rank Fusion) to merge results
+
+        Falls back to FTS-only when embeddings not available.
         """
         if not query or not query.strip():
             return []
@@ -270,7 +340,28 @@ class MemoryStore:
             # Ensure FTS index exists
             self._ensure_fts_index()
 
-            # Use LanceDB native FTS on summary
+            # Use hybrid search if embeddings and vector column available
+            if self._embeddings_available and self._has_vector_column():
+                try:
+                    from .embeddings import generate_query_embedding
+                    query_embedding = generate_query_embedding(query)
+
+                    if query_embedding is not None:
+                        # Hybrid search: FTS + vector with RRF reranking
+                        # Must pass both vector and text query separately
+                        results = (
+                            self.table
+                            .search(query_type='hybrid')
+                            .vector(query_embedding)
+                            .text(query)
+                            .limit(limit)
+                            .to_list()
+                        )
+                        return [Memory.from_dict(r) for r in results]
+                except Exception:
+                    pass  # Fall through to FTS-only
+
+            # FTS-only search (fallback or when no embeddings)
             results = (
                 self.table
                 .search(query, query_type='fts', fts_columns='summary')
@@ -322,15 +413,26 @@ class MemoryStore:
             return False
 
         # Apply updates
+        summary_changed = False
         for key, value in updates.items():
             if hasattr(memory, key):
+                if key == 'summary' and value != memory.summary:
+                    summary_changed = True
                 setattr(memory, key, value)
 
         memory.updated_at = datetime.utcnow().isoformat()
 
+        # Regenerate embedding if summary changed
+        if summary_changed and self._embeddings_available:
+            try:
+                from .embeddings import generate_embedding
+                memory.embedding = generate_embedding(memory.summary)
+            except Exception:
+                pass
+
         # Delete old and add new (LanceDB doesn't have in-place update)
         self.table.delete(f"id = '{memory_id}'")
-        self.table.add([memory.to_dict()])
+        self.table.add([memory.to_dict(include_vector=self._has_vector_column())])
         return True
 
     def delete(self, memory_id: str) -> bool:
@@ -387,10 +489,10 @@ class MemoryStore:
 
     def _update_access(self, memory_id: str):
         """Update access tracking for a memory."""
-        # Get current access count
+        # Get current record (raw dict to preserve all fields including vector)
         results = self.table.search().where(f"id = '{memory_id}'").limit(1).to_list()
         if results:
-            current = results[0]
+            current = dict(results[0])
             new_count = current.get('access_count', 0) + 1
             now = datetime.utcnow().isoformat()
 
@@ -398,4 +500,11 @@ class MemoryStore:
             self.table.delete(f"id = '{memory_id}'")
             current['access_count'] = new_count
             current['last_accessed'] = now
+            # Remove any search result fields
+            current.pop('_distance', None)
+            current.pop('_relevance_score', None)
             self.table.add([current])
+
+    def embeddings_enabled(self) -> bool:
+        """Check if embeddings are enabled and working."""
+        return self._embeddings_available and self._has_vector_column()
