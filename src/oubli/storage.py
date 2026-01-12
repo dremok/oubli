@@ -175,12 +175,22 @@ class MemoryStore:
         source: str = "conversation",
         parent_ids: Optional[list[str]] = None,
         embedding: Optional[list[float]] = None,
+        dedupe: bool = True,
     ) -> str:
         """Add a new memory.
 
+        Args:
+            dedupe: If True, skip adding if a very similar memory exists.
+
         Returns:
-            The ID of the created memory.
+            The ID of the created memory, or existing memory ID if duplicate.
         """
+        # Check for duplicates by searching for similar summaries
+        if dedupe:
+            existing = self._find_duplicate(summary)
+            if existing:
+                return existing.id
+
         memory = Memory(
             summary=summary,
             full_text=full_text,
@@ -194,6 +204,38 @@ class MemoryStore:
 
         self.table.add([memory.to_dict()])
         return memory.id
+
+    def _find_duplicate(self, summary: str, threshold: float = 0.85) -> Optional[Memory]:
+        """Find an existing memory with very similar summary.
+
+        Uses simple word overlap ratio for similarity.
+        """
+        summary_words = set(summary.lower().split())
+        if len(summary_words) < 3:
+            return None
+
+        # Search for potential matches
+        try:
+            # Take first few significant words for search
+            search_terms = ' '.join(list(summary_words)[:3])
+            candidates = self.search(search_terms, limit=5)
+
+            for candidate in candidates:
+                candidate_words = set(candidate.summary.lower().split())
+                if not candidate_words:
+                    continue
+
+                # Jaccard similarity
+                intersection = len(summary_words & candidate_words)
+                union = len(summary_words | candidate_words)
+                similarity = intersection / union if union > 0 else 0
+
+                if similarity >= threshold:
+                    return candidate
+        except Exception:
+            pass
+
+        return None
 
     def get(self, memory_id: str) -> Optional[Memory]:
         """Get a memory by ID."""

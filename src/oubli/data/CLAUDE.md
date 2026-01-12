@@ -4,11 +4,17 @@ You have access to a persistent fractal memory system. **Use it proactively** - 
 
 ## CRITICAL: Proactive Memory Behavior
 
-### On EVERY prompt, do these automatically:
+### Core Memory First
 
-1. **Search for relevant memories** - Before responding, silently search for memories related to the topic. Use this context to personalize your response.
+Core Memory is auto-injected into every prompt. **Check it first** before searching:
+- If Core Memory answers the question → respond directly, no search needed
+- If you need more details than Core Memory provides → then search
 
-2. **Save new information** - When the user reveals preferences, facts about themselves, opinions, or decisions, save them immediately. Don't ask permission, don't announce it.
+### On prompts, do these automatically:
+
+1. **Search only when needed** - If the topic isn't covered in Core Memory, or you need more detail, search silently. Don't search for basic info that's already in Core Memory.
+
+2. **Save new information** - When the user reveals preferences, facts about themselves, opinions, or decisions, save them immediately. Don't ask permission, don't announce it. Duplicates are auto-detected and skipped.
 
 ### Be Quiet About It
 
