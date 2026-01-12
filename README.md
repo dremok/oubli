@@ -10,10 +10,9 @@ A memory system that never forgets. Persistent fractal memory for Claude Code.
 
 ## Features
 
+- **Fractal in Both Directions** - Synthesize raw memories into insights, drill down from insights to source details
 - **Hybrid Search** - Combines BM25 keyword search + semantic embeddings for intelligent retrieval
 - **Core Memory** - Essential facts about you (~2K tokens), loaded in every conversation
-- **Fractal Synthesis** - Raw memories consolidate into higher-level insights automatically
-- **Duplicate Merging** - Similar memories merged during synthesis (85% Jaccard threshold)
 - **Proactive Memory** - Claude searches and saves automatically, no prompting needed
 - **Immediate Updates** - Family, work, and identity changes update Core Memory instantly
 - **Quiet Operation** - Memory operations happen silently in the background
@@ -42,7 +41,9 @@ pip uninstall oubli
 
 ## How It Works
 
-### Memory Hierarchy
+### Fractal Memory Hierarchy
+
+The memory system is **fractal in both directions**:
 
 ```
            ┌─────────────────────────────────────────┐
@@ -51,8 +52,9 @@ pip uninstall oubli
            │                                         │
            │  Identity, family, work, preferences    │
            └─────────────────────┬───────────────────┘
-                                 │ synthesized from
-                                 ▼
+                                 │
+                    ▲ synthesis  │  drill-down ▼
+                                 │
 Level 2    ○ "Deeply technical, values efficiency"
             ╲
 Level 1    ○ ○ "Loves jazz fusion"  "Python expert"
@@ -60,9 +62,14 @@ Level 1    ○ ○ "Loves jazz fusion"  "Python expert"
 Level 0    ○○○○ Raw memories with full conversation text
 ```
 
-- **Core Memory**: Always loaded. The essential "you" - identity, family, work, key preferences.
-- **Level 0**: Raw memories from conversations with full context.
-- **Level 1+**: Synthesized insights combining multiple raw memories.
+- **Upward (Synthesis)**: Raw memories consolidate into higher-level insights
+- **Downward (Drill-down)**: From any insight, retrieve its source memories for full detail
+
+| Level | Contains | Use Case |
+|-------|----------|----------|
+| Core Memory | Essential identity (~2K tokens) | Always loaded, answers most questions |
+| Level 1+ | Synthesized insights | Quick context without full details |
+| Level 0 | Raw memories + full conversation | When you need exact quotes or specifics |
 
 ### Hybrid Search
 
@@ -73,16 +80,24 @@ Oubli uses LanceDB's hybrid search combining:
 
 Example: Searching "jazz music" finds memories about "Pat Metheny" and "fusion harmonies" even without exact keyword matches.
 
-### Synthesis Workflow
+### Synthesis (Bottom-Up)
 
-Run `/synthesize` to consolidate your memories:
+Run `/synthesize` to consolidate raw memories into insights:
 
-1. **Merge duplicates** - Similar memories at each level are combined
+1. **Merge duplicates** - Similar memories at each level are combined (85% Jaccard threshold)
 2. **Group by topic** - Related memories clustered together
 3. **Create insights** - Level 1+ memories synthesize the patterns
 4. **Update Core Memory** - Regenerated from highest-level insights
 
-Nothing is lost - you can always drill down from a synthesis to its source memories.
+### Drill-Down Retrieval (Top-Down)
+
+When you need more detail than a high-level insight provides:
+
+1. **Search** returns synthesized insights first (compact, high-signal)
+2. **Get parents** retrieves the source memories that formed an insight
+3. **Get full text** retrieves the complete conversation from a Level 0 memory
+
+Nothing is ever lost - every insight links back to its source memories.
 
 ## Usage
 
