@@ -149,17 +149,19 @@ class MemoryStore:
             self._ensure_fts_index()
 
     def _ensure_fts_index(self):
-        """Create FTS index on summary and full_text if not exists."""
+        """Create native FTS index on summary (supports incremental updates)."""
         try:
-            # Check if index exists by looking at table indices
             indices = self.table.list_indices()
-            fts_exists = any(idx.get('index_type') == 'FTS' for idx in indices)
+            fts_exists = any(
+                getattr(idx, 'index_type', None) == 'FTS'
+                for idx in indices
+            )
             if not fts_exists:
-                self.table.create_fts_index(['summary', 'full_text'], replace=True)
+                # Use native FTS (not tantivy) for incremental indexing support
+                self.table.create_fts_index('summary', use_tantivy=False, replace=True)
         except Exception:
-            # If listing fails or index creation fails, try to create anyway
             try:
-                self.table.create_fts_index(['summary', 'full_text'], replace=True)
+                self.table.create_fts_index('summary', use_tantivy=False, replace=True)
             except Exception:
                 pass  # Index may already exist or table is empty
 
@@ -214,21 +216,22 @@ class MemoryStore:
         return [Memory.from_dict(r) for r in results]
 
     def search(self, query: str, limit: int = 10) -> list[Memory]:
-        """Search memories using LanceDB full-text search on summary and full_text.
+        """Search memories using LanceDB full-text search on summary.
 
         Uses BM25-based ranking for relevance scoring.
+        Searches summary field which contains the key information.
         """
         if not query or not query.strip():
             return []
 
         try:
-            # Ensure FTS index exists (handles incremental data)
+            # Ensure FTS index exists
             self._ensure_fts_index()
 
-            # Use LanceDB native FTS
+            # Use LanceDB native FTS on summary
             results = (
                 self.table
-                .search(query, query_type='fts', fts_columns=['summary', 'full_text'])
+                .search(query, query_type='fts', fts_columns='summary')
                 .limit(limit)
                 .to_list()
             )
