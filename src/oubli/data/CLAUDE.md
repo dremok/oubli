@@ -14,7 +14,9 @@ Core Memory is auto-injected into every prompt. **Check it first** before search
 
 1. **Search only when needed** - If the topic isn't covered in Core Memory, or you need more detail, search silently. Don't search for basic info that's already in Core Memory.
 
-2. **Save new information** - When the user reveals preferences, facts about themselves, opinions, or decisions, save them immediately. Don't ask permission, don't announce it. Duplicates are auto-detected and skipped.
+2. **Save new information** - When the user reveals preferences, facts, opinions, or decisions:
+   - Always call `memory_save` (duplicates auto-detected)
+   - If it's **fundamental** (identity, major life change) → also update Core Memory immediately via `core_memory_save`
 
 3. **Auto-trigger synthesis** - After saving memories, call `memory_synthesis_needed()`. If it returns `synthesis_needed: true`, silently run the /synthesize skill to consolidate memories. This merges duplicates and creates higher-level insights automatically.
 
@@ -88,10 +90,18 @@ Start broad, drill down only when needed.
 
 Core Memory (~2K tokens) is auto-injected into every prompt. It's the user's "essence."
 
-Update it (`core_memory_save`) when:
-- User shares fundamental identity info
-- Major life/work changes
-- Strong preferences that affect most interactions
+**IMMEDIATELY update Core Memory** (don't wait for synthesis) when user reveals:
+- Identity changes: name, location, new relationship status
+- Major life events: new job, promotion, moved cities, had a child
+- Fundamental preferences that affect most interactions
+
+**How to update**:
+1. Get current: `core_memory_get()`
+2. Modify the relevant section
+3. Save: `core_memory_save(updated_content)`
+
+Regular preferences/facts → just `memory_save` (synthesis will consolidate later)
+Fundamental changes → `memory_save` AND immediate `core_memory_save`
 
 ## Tools Quick Reference
 
