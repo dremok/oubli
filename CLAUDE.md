@@ -44,7 +44,7 @@ The install script:
 ├── commands/
 │   └── clear-memories.md  # /clear-memories slash command
 └── hooks/
-    └── hooks.json       # UserPromptSubmit + Stop hooks
+    └── hooks.json       # UserPromptSubmit, PreCompact, Stop hooks
 ```
 
 ## Key Files
@@ -87,7 +87,8 @@ The install script:
 ## Hooks
 
 - **UserPromptSubmit** - Injects Core Memory into every prompt
-- **Stop** - Evaluates if memories should be saved at session end
+- **PreCompact** - Saves memories before context compaction (prevents losing info in long sessions)
+- **Stop** - Saves memories at session end
 
 ## Current Status
 
@@ -97,7 +98,7 @@ The install script:
 - CRUD operations (add, get, search, update, delete)
 - Core memory file operations
 - MCP server with 13 tools (including synthesis and fractal drill-down)
-- Session hooks (UserPromptSubmit for core memory, Stop for auto-save)
+- Session hooks (UserPromptSubmit for core memory, PreCompact + Stop for auto-save)
 - `/clear-memories` slash command
 - Plugin structure with bundled MCP, commands, hooks
 - Instructions for Claude in plugin CLAUDE.md

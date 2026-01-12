@@ -11,7 +11,9 @@ A memory system that never forgets. Persistent fractal memory for Claude Code.
 - **Core Memory** - Essential facts about you (~2K tokens), loaded in every conversation
 - **Persistent Storage** - Memories survive across sessions, stored locally in LanceDB
 - **Smart Import** - Import your Claude.ai memory export with one command
-- **Auto-Save** - Optionally save important information at session end
+- **Auto-Save** - Saves memories at session end and before context compaction
+- **Fractal Synthesis** - Automatically consolidates raw memories into higher-level insights
+- **Quiet Operation** - Memory operations happen silently in the background
 - **Local-First** - No external services, no API keys, your data stays on your machine
 
 ## Installation
@@ -69,7 +71,7 @@ Level 0   ○ ○ ○ ○  Raw memories from conversations
 
 - **Core Memory**: Always loaded, contains the most important stable facts
 - **Level 0**: Raw memories from conversations with full context
-- **Level 1+**: Synthesized insights (future feature)
+- **Level 1+**: Synthesized insights from multiple raw memories
 
 ## Data Storage
 
@@ -79,18 +81,21 @@ All data is stored locally in `~/.oubli/`:
 
 ## MCP Tools
 
-Oubli provides 10 MCP tools for memory operations:
+Oubli provides 13 MCP tools for memory operations:
 
 | Tool | Description |
 |------|-------------|
 | `memory_save` | Save a new memory |
-| `memory_search` | Search memories by keyword |
-| `memory_get` | Get full details of a memory |
-| `memory_list` | List all memories |
+| `memory_search` | Search memories (prefers higher-level insights) |
+| `memory_get` | Get full details including conversation text |
+| `memory_get_parents` | Drill down from synthesis to source memories |
+| `memory_list` | List memories by level |
 | `memory_stats` | Get memory statistics |
 | `memory_update` | Update an existing memory |
 | `memory_delete` | Delete a memory |
 | `memory_import` | Bulk import memories |
+| `memory_synthesize` | Create Level 1+ insight from raw memories |
+| `memory_get_synthesis_candidates` | Find topics ready for synthesis |
 | `core_memory_get` | Get Core Memory content |
 | `core_memory_save` | Save Core Memory content |
 
