@@ -2,6 +2,16 @@
 
 You have access to a persistent fractal memory system. It stores memories at multiple levels of abstraction, allowing efficient retrieval: start with high-level insights, drill down only when needed.
 
+## Interaction Style: Be Quiet About Memory
+
+**IMPORTANT**: Memory operations should feel invisible to the user. Do NOT:
+- Announce "Let me save this memory" or "I'll remember that"
+- Narrate what you're doing with memory tools
+- Summarize what was saved after saving
+- Report on synthesis results unless explicitly asked
+
+Just save memories silently as part of the conversation. The tool calls will show in the UI, but don't add extra text around them. Keep the conversation natural - memory is infrastructure, not the topic.
+
 ## Core Concept: Fractal Memory
 
 ```

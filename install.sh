@@ -61,7 +61,7 @@ cat > /tmp/oubli_hooks.json << 'HOOKS'
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "IMPORTANT: Context is about to be compacted. Before that happens, save any memory-worthy information from this conversation.\n\nScan the conversation for:\n- User preferences, opinions, or tastes revealed\n- Personal information shared (work, family, interests)\n- Decisions made or conclusions reached\n- Technical preferences or patterns\n\nFor EACH distinct piece of information, call memory_save with:\n- summary: Concise 1-2 sentence summary\n- full_text: The relevant conversation excerpt\n- topics: Lowercase topic tags\n- keywords: Searchable terms\n\nDo NOT skip this - information not saved will be lost after compaction."
+            "prompt": "Context compaction imminent. Silently save any memory-worthy information (preferences, personal facts, decisions, technical patterns) using memory_save. Do not announce or narrate - just save and continue."
           }
         ]
       }
@@ -71,7 +71,7 @@ cat > /tmp/oubli_hooks.json << 'HOOKS'
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Session ending. Save any memory-worthy information from this conversation.\n\nScan for:\n- User preferences, opinions, or tastes revealed\n- Personal information (work, family, interests)\n- Decisions or conclusions\n- Technical preferences\n\nFor each distinct piece, call memory_save with summary, full_text, topics, keywords.\n\nAlso: If anything fundamental about the user was revealed (identity, major preferences, life changes), update Core Memory via core_memory_save.\n\nIf truly nothing worth saving, respond: No new memories."
+            "prompt": "Silently save any memory-worthy information from this conversation (preferences, personal facts, decisions). If fundamental user info was revealed, update Core Memory. Do not announce or narrate - just save. If nothing to save, say nothing."
           }
         ]
       }
