@@ -466,35 +466,85 @@ def memory_synthesize(
 
 
 @mcp.tool()
-def memory_get_synthesis_candidates(
-    topic: str = None,
-    min_count: int = 3,
+def memory_prepare_synthesis(
+    level: int = 0,
+    similarity_threshold: float = 0.85,
+    min_group_size: int = 2,
 ) -> dict:
-    """Get Level 0 memories that could be candidates for synthesis.
+    """Prepare a level for synthesis: merge duplicates, return groups for synthesis.
 
-    Returns memories grouped by topic to help identify synthesis opportunities.
-    Claude can review these and decide which groups should be synthesized.
+    SYNTHESIS WORKFLOW (call this level by level):
+    1. memory_prepare_synthesis(level=0) → merges dupes, returns groups
+    2. For each group, create a Level 1 summary via memory_synthesize
+    3. memory_prepare_synthesis(level=1) → merges dupes at L1, returns groups
+    4. Create Level 2 summaries, etc.
+
+    This tool AUTOMATICALLY MERGES similar memories at the specified level,
+    keeping the highest-quality one (most detail/metadata). Then it returns
+    groups of related but distinct memories ready for synthesis.
 
     Args:
-        topic: Optional topic to filter by. If not provided, returns all topics.
-        min_count: Minimum memories in a topic to be considered (default: 3).
+        level: Which level to prepare (default: 0).
+        similarity_threshold: Jaccard threshold for merging (0.85 = 85% word overlap).
+        min_group_size: Minimum group size to return for synthesis (default: 2).
 
     Returns:
-        Dict with topics and their candidate memories.
+        Dict with merge stats and groups ready for synthesis.
     """
     store = get_store()
-    memories = store.get_by_level(0, limit=500)
+    memories = store.get_by_level(level, limit=500)
 
-    # Group by topic
-    by_topic: dict[str, list] = {}
-    for m in memories:
-        # Skip if already synthesized (has children)
-        if m.child_ids:
+    # Skip memories that already have children (already synthesized)
+    memories = [m for m in memories if not m.child_ids]
+
+    # STEP 1: Find and merge duplicates
+    def jaccard(m1, m2):
+        w1 = set(m1.summary.lower().split())
+        w2 = set(m2.summary.lower().split())
+        if not w1 or not w2:
+            return 0
+        return len(w1 & w2) / len(w1 | w2)
+
+    def quality_score(m):
+        ft_len = len(m.full_text) if m.full_text else 0
+        return (ft_len, len(m.topics), len(m.keywords))
+
+    # Find duplicate groups
+    processed = set()
+    merged_count = 0
+
+    for i, m1 in enumerate(memories):
+        if m1.id in processed:
             continue
 
-        for t in m.topics:
-            if topic and t != topic:
+        duplicates = []
+        for m2 in memories[i+1:]:
+            if m2.id in processed:
                 continue
+            if jaccard(m1, m2) >= similarity_threshold:
+                duplicates.append(m2)
+                processed.add(m2.id)
+
+        if duplicates:
+            # Keep the best one, delete the rest
+            all_in_group = [m1] + duplicates
+            sorted_group = sorted(all_in_group, key=quality_score, reverse=True)
+            keep = sorted_group[0]
+            to_delete = sorted_group[1:]
+
+            for dup in to_delete:
+                store.delete(dup.id)
+                merged_count += 1
+
+            processed.add(m1.id)
+
+    # STEP 2: Refresh memories after merge and group by topic
+    memories = store.get_by_level(level, limit=500)
+    memories = [m for m in memories if not m.child_ids]
+
+    by_topic: dict[str, list] = {}
+    for m in memories:
+        for t in m.topics:
             if t not in by_topic:
                 by_topic[t] = []
             by_topic[t].append({
@@ -503,15 +553,19 @@ def memory_get_synthesis_candidates(
                 "keywords": m.keywords,
             })
 
-    # Filter by min_count
-    candidates = {
+    # Filter by min_group_size
+    synthesis_groups = {
         t: mems for t, mems in by_topic.items()
-        if len(mems) >= min_count
+        if len(mems) >= min_group_size
     }
 
     return {
-        "topics_with_candidates": len(candidates),
-        "candidates": candidates,
+        "level": level,
+        "duplicates_merged": merged_count,
+        "memories_remaining": len(memories),
+        "synthesis_groups": len(synthesis_groups),
+        "groups": synthesis_groups,
+        "next_step": f"For each group, create a Level {level + 1} summary using memory_synthesize(parent_ids=[...], summary='...')"
     }
 
 
