@@ -55,7 +55,7 @@ The Core Memory is a special, always-present context block (~2K tokens) that con
 
 **Update triggers:**
 1. **Immediately for fundamental changes:** Family info, work changes, location changes
-2. **After synthesis:** When /synthesize completes, Core Memory is regenerated from highest-level insights
+2. **After synthesis:** When /synthesize completes, Core Memory is updated incrementally (additions from new insights, removals only with explicit contradicting evidence)
 3. **Manual:** User can ask Claude to update Core Memory
 
 **Key principle:** Core Memory should be **stable** for most things, but **immediately updated** for fundamental identity/work/family changes.
@@ -163,25 +163,41 @@ Deduplication happens during synthesis via `memory_prepare_synthesis`, not on sa
 
 ```bash
 pip install oubli
-oubli setup
+oubli setup  # Installs MCP server globally + hooks for current project
 ```
 
-Then restart Claude Code. That's it.
+Then restart Claude Code.
+
+**Important**: Hooks are installed **project-locally** by default (`.claude/settings.local.json`).
+This prevents errors in projects without Oubli.
+
+To enable Oubli in other projects:
+```bash
+cd /path/to/your/project
+oubli enable
+```
+
+To disable Oubli in a project:
+```bash
+cd /path/to/your/project
+oubli disable
+```
 
 ### What Gets Installed
 
-| Component | Location | Description |
-|-----------|----------|-------------|
-| MCP Server | `claude mcp` registry | 15 memory tools |
-| Hooks | `~/.claude/settings.json` | UserPromptSubmit, PreCompact, Stop |
-| Slash Commands | `~/.claude/commands/` | `/clear-memories`, `/synthesize` |
-| Instructions | `~/.claude/CLAUDE.md` | How Claude should use the memory system |
-| Data | `~/.oubli/` | LanceDB database + Core Memory file |
+| Component | Location | Scope | Description |
+|-----------|----------|-------|-------------|
+| MCP Server | `claude mcp` registry | Global | 15 memory tools |
+| Hooks | `.claude/settings.local.json` | **Per-project** | UserPromptSubmit, PreCompact, Stop |
+| Slash Commands | `~/.claude/commands/` | Global | `/clear-memories`, `/synthesize` |
+| Instructions | `~/.claude/CLAUDE.md` | Global | How Claude should use the memory system |
+| Data | `~/.oubli/` | Global | LanceDB database + Core Memory file |
 
 ### Uninstall
 
 ```bash
-oubli uninstall
+oubli uninstall  # Removes MCP server, global hooks, commands
+oubli disable    # (In each project) Remove project-local hooks
 pip uninstall oubli
 ```
 
@@ -189,7 +205,9 @@ pip uninstall oubli
 
 ## Plugin Components
 
-### 1. Hooks (in ~/.claude/settings.json)
+### 1. Hooks (in .claude/settings.local.json)
+
+**Note**: Hooks are installed project-locally by default to avoid errors in projects without Oubli.
 
 ```json
 {
@@ -221,6 +239,8 @@ pip uninstall oubli
 **PreCompact:** Prompt hook that tells Claude to save memories before context compaction.
 
 **Stop:** Prompt hook that tells Claude to save memories and optionally update Core Memory at session end.
+
+**Legacy global installation**: Use `oubli setup --global` to install hooks globally, or `oubli remove-global-hooks` to transition from global to project-local.
 
 ### 2. MCP Server Tools (15 total)
 
@@ -274,7 +294,7 @@ Full synthesis workflow:
 1. Loop through levels (0, 1, 2, ...):
    - `memory_prepare_synthesis(level=N)` - auto-merges duplicates, returns groups
    - For each group, create a summary and call `memory_synthesize`
-2. Final step: Regenerate Core Memory from highest-level insights
+2. Final step: Update Core Memory incrementally (add new info, remove only with contradicting evidence)
 
 ---
 
@@ -302,10 +322,12 @@ After saving memories, Claude calls `memory_synthesis_needed(threshold=5)`. If i
 
 4. Continue until no more groups...
 
-5. FINAL: Update Core Memory
-   ├─ memory_list(level=highest)
-   ├─ core_memory_get()
-   └─ core_memory_save(regenerated_content)
+5. FINAL: Update Core Memory (incremental, not regeneration)
+   ├─ core_memory_get() → start with existing as base
+   ├─ Review new memories from synthesis (any level)
+   ├─ ADD new info useful in most conversations
+   ├─ REMOVE only if explicit contradicting evidence exists
+   └─ core_memory_save(updated_content)
 ```
 
 ### Fractal Property
@@ -452,10 +474,11 @@ dependencies = [
 
 ### Not Yet Implemented
 
-- [ ] Web UI for browsing memories
-- [ ] Memory graph visualization
 - [ ] Git-based sync between machines
-- [ ] Import from ChatGPT, Gemini
+
+### Recently Added
+
+- [x] `oubli viz` - Interactive memory graph visualization with topic filtering
 
 ---
 

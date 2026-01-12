@@ -82,15 +82,20 @@ Start broad (Core Memory → search results), drill down only when needed.
 
 ## How to Update Core Memory
 
+Core Memory updates are **incremental**, not regenerations:
+
 ```
-1. core_memory_get() → get current content
-2. Edit the relevant section (add/modify lines)
-3. core_memory_save(updated_content) → save
+1. core_memory_get() → get current content as BASE
+2. ADD new information to relevant sections
+3. REMOVE only if explicit contradicting evidence exists
+   (e.g., user says "I quit Spotify" → remove "works at Spotify")
+4. core_memory_save(updated_content) → save
 ```
 
 **Decision rule:**
 - Useful in MOST future conversations? → Core Memory
 - One-off preference or detail? → Just memory_save
+- Outdated info with explicit contradiction? → Remove from Core Memory
 
 ## Tools Reference
 

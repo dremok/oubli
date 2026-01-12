@@ -139,6 +139,9 @@ cd oubli
 pip install -e .
 oubli setup
 
+# Visualize memory graph
+oubli viz
+
 # Run tests
 python -c "from oubli.storage import MemoryStore; store = MemoryStore(); print(store.get_stats())"
 
@@ -152,6 +155,21 @@ rm -rf ~/.oubli/
 # Check MCP server loads
 python -c "from oubli.mcp_server import mcp; print([t.name for t in mcp._tool_manager._tools.values()])"
 ```
+
+## Publishing to PyPI
+
+When the user asks to publish a new version:
+
+1. **Bump version** in `pyproject.toml` (use semver: patch for fixes, minor for features, major for breaking)
+2. **Build**: `rm -rf dist/ && python -m build`
+3. **Ask user for PyPI token** - just say: "I need your PyPI token to publish"
+4. **Publish**:
+   ```bash
+   TWINE_USERNAME=__token__ TWINE_PASSWORD="<token>" python -m twine upload dist/*
+   ```
+5. **Confirm** with PyPI URL: `https://pypi.org/project/oubli/<version>/`
+
+User can then upgrade in other projects: `pip install --upgrade oubli`
 
 ## Data Storage
 

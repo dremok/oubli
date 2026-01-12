@@ -33,11 +33,13 @@ LOOP:
   5. GOTO LOOP
 
 FINAL STEP - Update Core Memory:
-  1. Get highest-level insights via memory_list(level=highest)
-  2. Get current Core Memory via core_memory_get()
-  3. Regenerate Core Memory:
-     - Keep stable identity (name, family, location)
-     - Update sections with new insights
+  1. Get current Core Memory via core_memory_get()
+  2. Review all new memories from this synthesis (any level)
+  3. Update Core Memory incrementally:
+     - START with existing Core Memory as the base
+     - ADD new information that would be useful in most future conversations
+     - REMOVE only if there's explicit contradicting evidence
+       (e.g., memory says "I quit Spotify" → remove "works at Spotify")
      - Keep concise (~2K tokens max)
      - Maintain markdown structure
   4. Save via core_memory_save(content)
