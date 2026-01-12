@@ -1,6 +1,6 @@
 [project]
 name = "oubli"
-version = "0.2.0"
+version = "0.2.1"
 description = "Fractal memory system for Claude Code"
 readme = "README.md"
 license = { text = "MIT" }
@@ -24,10 +24,6 @@ dependencies = [
     "lancedb>=0.4.0",
     "pyarrow>=14.0.0",
     "click>=8.0.0",
-]
-
-[project.optional-dependencies]
-embeddings = [
     "sentence-transformers>=2.2.0",
 ]
 
