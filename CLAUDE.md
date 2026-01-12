@@ -29,11 +29,13 @@ cd oubli
 ./install.sh
 ```
 
-The install script:
-1. Creates virtual environment with uv
-2. Installs dependencies
-3. Registers MCP server with Claude Code
-4. Sets up hooks for core memory injection
+The install script installs:
+1. **Virtual environment** - `.venv/` with dependencies
+2. **MCP server** - Registered via `claude mcp add`
+3. **Hooks** - Written to `~/.claude/settings.json`
+4. **Slash command** - `/clear-memories` copied to `~/.claude/commands/`
+5. **CLAUDE.md** - Instructions copied to `~/.claude/CLAUDE.md`
+6. **Data directory** - `~/.oubli/` created
 
 ## Plugin Structure
 

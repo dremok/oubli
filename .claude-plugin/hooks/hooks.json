@@ -5,7 +5,17 @@
         "hooks": [
           {
             "type": "command",
-            "command": "OUBLI_INSTALL_PATH/.venv/bin/python -m oubli.cli inject-context"
+            "command": "${CLAUDE_PLUGIN_ROOT}/../.venv/bin/python -m oubli.cli inject-context"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Context compaction imminent. Silently save any memory-worthy information (preferences, personal facts, decisions, technical patterns) using memory_save. Do not announce or narrate - just save and continue."
           }
         ]
       }
@@ -15,7 +25,7 @@
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "Review this conversation and decide if any memories should be saved.\n\nCriteria for saving:\n- New factual information about the user (preferences, background, relationships)\n- Decisions or preferences expressed\n- Project context worth preserving\n- Insights or learnings\n- Corrections to previous assumptions\n\nIf saving, use the memory_save tool with:\n- summary: Concise summary (1-2 sentences)\n- topics: Relevant topic categories\n- keywords: Searchable keywords\n\nAlso consider: Should Core Memory be updated? If this conversation revealed something fundamental about the user (identity, core preferences, major life/work changes), use core_memory_save after saving memories.\n\nIf nothing worth saving, just respond: No new memories to save."
+            "prompt": "Silently save any memory-worthy information from this conversation (preferences, personal facts, decisions). If fundamental user info was revealed, update Core Memory. Do not announce or narrate - just save. If nothing to save, say nothing."
           }
         ]
       }

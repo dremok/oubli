@@ -31,6 +31,16 @@ Requirements:
 - [Claude Code](https://claude.ai/code) CLI installed
 - [uv](https://astral.sh/uv) for Python environment management
 
+### What Gets Installed
+
+| Component | Location | Description |
+|-----------|----------|-------------|
+| MCP Server | `claude mcp` | 13 memory tools (save, search, synthesize, etc.) |
+| Hooks | `~/.claude/settings.json` | UserPromptSubmit, PreCompact, Stop |
+| Slash Command | `~/.claude/commands/` | `/clear-memories` |
+| Instructions | `~/.claude/CLAUDE.md` | How Claude should use the memory system |
+| Data | `~/.oubli/` | LanceDB database + Core Memory file |
+
 ## Usage
 
 After installation, restart Claude Code. Your Core Memory will be automatically loaded in every conversation.

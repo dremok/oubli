@@ -39,11 +39,10 @@ claude mcp add oubli -- "$SCRIPT_DIR/.venv/bin/python" -m oubli.mcp_server || ec
 
 echo ""
 echo "4. Setting up hooks in ~/.claude/settings.json..."
-# Create ~/.claude if it doesn't exist
 mkdir -p ~/.claude
 
-# Create or update settings.json with our hooks
-cat > /tmp/oubli_hooks.json << 'HOOKS'
+# Create hooks JSON with actual install path
+cat > /tmp/oubli_hooks.json << HOOKS
 {
   "hooks": {
     "UserPromptSubmit": [
@@ -51,7 +50,7 @@ cat > /tmp/oubli_hooks.json << 'HOOKS'
         "hooks": [
           {
             "type": "command",
-            "command": "INSTALL_PATH_PLACEHOLDER/.venv/bin/python -m oubli.cli inject-context"
+            "command": "$SCRIPT_DIR/.venv/bin/python -m oubli.cli inject-context"
           }
         ]
       }
@@ -79,11 +78,8 @@ cat > /tmp/oubli_hooks.json << 'HOOKS'
   }
 }
 HOOKS
-# Replace placeholder with actual path
-sed -i.bak "s|INSTALL_PATH_PLACEHOLDER|$SCRIPT_DIR|g" /tmp/oubli_hooks.json
-rm -f /tmp/oubli_hooks.json.bak
 
-# If settings.json exists, we need to merge; otherwise just copy
+# Backup existing settings if present
 if [ -f ~/.claude/settings.json ]; then
     echo "   Note: ~/.claude/settings.json exists. Backing up to settings.json.bak"
     cp ~/.claude/settings.json ~/.claude/settings.json.bak
@@ -92,20 +88,33 @@ cp /tmp/oubli_hooks.json ~/.claude/settings.json
 rm /tmp/oubli_hooks.json
 
 echo ""
-echo "5. Creating data directory..."
+echo "5. Installing slash commands..."
+mkdir -p ~/.claude/commands
+cp "$SCRIPT_DIR/.claude-plugin/commands/clear-memories.md" ~/.claude/commands/
+
+echo ""
+echo "6. Installing CLAUDE.md (memory system instructions)..."
+# Copy to global location so it's available in all projects
+cp "$SCRIPT_DIR/.claude-plugin/CLAUDE.md" ~/.claude/CLAUDE.md
+
+echo ""
+echo "7. Creating data directory..."
 mkdir -p ~/.oubli
 
 echo ""
 echo "========================================================="
 echo "Installation complete!"
 echo ""
+echo "What was installed:"
+echo "  - MCP server: oubli (13 memory tools)"
+echo "  - Hooks: UserPromptSubmit, PreCompact, Stop"
+echo "  - Slash command: /clear-memories"
+echo "  - Instructions: ~/.claude/CLAUDE.md"
+echo "  - Data directory: ~/.oubli/"
+echo ""
 echo "To use Oubli:"
 echo "  1. Restart Claude Code"
-echo "  2. Start chatting - Core Memory will be injected automatically"
-echo "  3. Import existing memories: paste your Claude.ai export and ask to import"
+echo "  2. Start chatting - memories are handled automatically"
+echo "  3. Import existing memories: paste your Claude.ai export"
 echo ""
-echo "Slash commands available:"
-echo "  /clear-memories  - Clear all memories (requires confirmation)"
-echo ""
-echo "Data is stored in: ~/.oubli/"
 echo "========================================================="
