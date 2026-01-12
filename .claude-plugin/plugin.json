@@ -1,0 +1,19 @@
+{
+  "name": "oubli",
+  "version": "0.1.0",
+  "description": "Fractal memory system for Claude Code - persistent, hierarchical memory with synthesis",
+  "author": {
+    "name": "Max Leander"
+  },
+  "repository": "https://github.com/dremok/oubli",
+  "license": "MIT",
+  "keywords": ["memory", "persistent", "fractal", "synthesis"],
+  "commands": ["./commands/"],
+  "hooks": "./hooks/hooks.json",
+  "mcpServers": {
+    "oubli": {
+      "command": "${CLAUDE_PLUGIN_ROOT}/.venv/bin/python",
+      "args": ["-m", "oubli.mcp_server"]
+    }
+  }
+}

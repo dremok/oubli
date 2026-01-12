@@ -269,6 +269,19 @@ class MemoryStore:
         self.table.delete(f"id = '{memory_id}'")
         return True
 
+    def delete_all(self) -> int:
+        """Delete all memories.
+
+        Returns:
+            Number of memories deleted.
+        """
+        count = len(self.get_all())
+        if count > 0:
+            # Drop and recreate table
+            self.db.drop_table(self.TABLE_NAME)
+            self._init_table()
+        return count
+
     def get_stats(self) -> MemoryStats:
         """Get statistics about the memory store."""
         all_memories = self.get_all()

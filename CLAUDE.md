@@ -16,52 +16,88 @@ A Claude Code plugin that provides persistent, hierarchical memory with fractal 
 
 - **LanceDB from the start** - Embedded vector database, avoids JSON→LanceDB migration pain later
 - **MCP tools are simple CRUD** - Claude Code does the intelligent work (parsing, clustering, summarizing)
-- **No slash commands needed** - Users just talk naturally ("Save a memory about...")
+- **Slash command for destructive ops** - `/clear-memories` requires explicit user invocation
 - **Core Memory is a markdown file** - `~/.oubli/core_memory.md`, human-readable and editable
 - **Everything runs locally** - No external services, no API keys needed
+
+## Installation
+
+```bash
+# Clone and install
+git clone https://github.com/dremok/oubli.git
+cd oubli
+./install.sh
+```
+
+The install script:
+1. Creates virtual environment with uv
+2. Installs dependencies
+3. Registers MCP server with Claude Code
+4. Sets up hooks for core memory injection
+
+## Plugin Structure
+
+```
+.claude-plugin/
+├── plugin.json          # Plugin manifest (MCP server, commands, hooks)
+├── CLAUDE.md            # Instructions for Claude on using the memory system
+├── commands/
+│   └── clear-memories.md  # /clear-memories slash command
+└── hooks/
+    └── hooks.json       # UserPromptSubmit + Stop hooks
+```
 
 ## Key Files
 
 - `src/oubli/storage.py` - LanceDB-backed MemoryStore with Memory dataclass
 - `src/oubli/core_memory.py` - Core memory file operations
 - `src/oubli/mcp_server.py` - MCP tools for Claude Code integration
+- `src/oubli/cli.py` - CLI commands for hooks (inject-context, session-start)
 - `SPEC.md` - Full specification document (source of truth for features)
 
-## MCP Server
+## MCP Tools (10 total)
 
-Installed via: `claude mcp add oubli -- .venv/bin/python -m oubli.mcp_server`
-
-Tools implemented:
+### Memory Operations
 - `memory_save` - Save a new memory
 - `memory_search` - Search by keyword
 - `memory_get` - Get full memory details
 - `memory_list` - List all memories
 - `memory_stats` - Get statistics
 - `memory_update` - Update a memory
+- `memory_delete` - Delete a memory (for obsolete info)
+- `memory_import` - Bulk import pre-parsed memories
+
+### Core Memory
 - `core_memory_get` - Get core memory content
-- `core_memory_save` - Save core memory content
+- `core_memory_save` - Save/replace core memory content
+
+## Slash Commands
+
+- `/clear-memories` - Clear all memories from the database (user must confirm)
+
+## Hooks
+
+- **UserPromptSubmit** - Injects Core Memory into every prompt
+- **Stop** - Evaluates if memories should be saved at session end
 
 ## Current Status
 
-### Completed (Phase 1-2)
+### Completed
 - Storage foundation with LanceDB
 - Memory dataclass with all fields
 - CRUD operations (add, get, search, update, delete)
 - Core memory file operations
-- MCP server with 8 tools
-- MCP server registered with Claude Code
+- MCP server with 10 tools
+- Session hooks (UserPromptSubmit for core memory, Stop for auto-save)
+- `/clear-memories` slash command
+- Plugin structure with bundled MCP, commands, hooks
+- Instructions for Claude in plugin CLAUDE.md
 
 ### Not Yet Implemented (from SPEC.md)
-- `memory_import` tool - Parse text blocks into multiple memories
 - `memory_synthesize` tool - Trigger clustering and synthesis
-- `core_memory_update` tool - Regenerate core memory from insights
-- `core_memory_edit` tool - Edit specific sections
-- Session hooks (SessionStart to load core memory, Stop to auto-save)
 - Embeddings for semantic search (currently keyword-only)
-- CLI commands
 - Synthesizer subagent
 - Memory awareness skill
-- Import parser for Claude.ai format
 
 ## Development Commands
 
@@ -72,17 +108,21 @@ source .venv/bin/activate
 # Run tests
 python -c "from oubli.storage import MemoryStore; store = MemoryStore(); print(store.get_stats())"
 
+# Test CLI
+python -m oubli.cli inject-context
+
 # Reset data
 rm -rf ~/.oubli/
 
 # Check MCP server loads
-python -c "from oubli.mcp_server import mcp; print(mcp.name)"
+python -c "from oubli.mcp_server import mcp; print([t.name for t in mcp._tool_manager._tools.values()])"
+
+# Test plugin locally
+claude --plugin-dir /Users/maxleander/code/oubli/.claude-plugin
 ```
 
-## Next Phase
+## Data Storage
 
-Phase 3: Test full flow in Claude Code
-- Restart Claude Code to load MCP server
-- Test: "What memories do you have?"
-- Test: "Save a memory that I like Python"
-- Test: "Search memories for Python"
+User data is stored in `~/.oubli/`:
+- `memories.lance/` - LanceDB database
+- `core_memory.md` - Core Memory file (~2K tokens, always loaded)

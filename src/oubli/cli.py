@@ -59,10 +59,12 @@ def main():
 
     if command == "inject-context":
         inject_context()
+        sys.exit(0)
     elif command == "session-start":
         session_start()
+        sys.exit(0)
     else:
-        print(f"Unknown command: {command}")
+        print(f"Unknown command: {command}", file=sys.stderr)
         sys.exit(1)
 
 

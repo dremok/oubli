@@ -232,6 +232,87 @@ def memory_update(
 
 
 # ============================================================================
+# Delete Tools
+# ============================================================================
+
+@mcp.tool()
+def memory_delete(memory_id: str) -> dict:
+    """Delete a specific memory by ID.
+
+    Use this when information becomes outdated or incorrect. For example,
+    if the user says "I no longer work at X", search for memories about
+    working at X and delete them.
+
+    Args:
+        memory_id: The UUID of the memory to delete.
+
+    Returns:
+        Status dict indicating success or failure.
+    """
+    store = get_store()
+    success = store.delete(memory_id)
+
+    if success:
+        return {"status": "deleted", "id": memory_id}
+    else:
+        return {"error": f"Memory {memory_id} not found"}
+
+
+# ============================================================================
+# Import Tools
+# ============================================================================
+
+@mcp.tool()
+def memory_import(
+    memories: list[dict],
+    source: str = "import",
+) -> dict:
+    """Import multiple memories at once.
+
+    This tool accepts pre-parsed memories. Claude Code should parse the raw
+    text (e.g., Claude.ai export, markdown notes) and extract metadata before
+    calling this tool.
+
+    Each memory dict should have:
+        - summary (required): Brief summary of the memory
+        - full_text (optional): Full text content
+        - topics (optional): List of topic tags
+        - keywords (optional): List of keywords
+
+    Args:
+        memories: List of memory dicts to import.
+        source: Source label for all imported memories (default: "import").
+
+    Returns:
+        Dict with count of imported memories and their IDs.
+    """
+    store = get_store()
+    imported_ids = []
+
+    for mem in memories:
+        summary = mem.get("summary")
+        if not summary:
+            continue  # Skip memories without summary
+
+        memory_id = store.add(
+            summary=summary,
+            level=0,
+            full_text=mem.get("full_text", ""),
+            topics=mem.get("topics", []),
+            keywords=mem.get("keywords", []),
+            source=source,
+            parent_ids=[],
+        )
+        imported_ids.append(memory_id)
+
+    return {
+        "status": "imported",
+        "count": len(imported_ids),
+        "ids": imported_ids,
+    }
+
+
+# ============================================================================
 # Core Memory Tools
 # ============================================================================
 
