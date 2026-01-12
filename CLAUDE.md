@@ -111,7 +111,7 @@ src/oubli/
 - **Hybrid search** - BM25 FTS + semantic embeddings (sentence-transformers)
 - LanceDB storage with vector column (384 dims, all-MiniLM-L6-v2)
 - Auto-embedding on save and update
-- Deduplication during synthesis via `memory_prepare_synthesis` (85% Jaccard threshold)
+- Deduplication during synthesis via `memory_prepare_synthesis`
 - Memory dataclass with all fields
 - CRUD operations (add, get, search, update, delete)
 - Core memory file operations

@@ -84,7 +84,7 @@ Example: Searching "jazz music" finds memories about "Pat Metheny" and "fusion h
 
 Run `/synthesize` to consolidate raw memories into insights:
 
-1. **Merge duplicates** - Similar memories at each level are combined (85% Jaccard threshold)
+1. **Merge duplicates** - Similar memories at each level are combined
 2. **Group by topic** - Related memories clustered together
 3. **Create insights** - Level 1+ memories synthesize the patterns
 4. **Update Core Memory** - Regenerated from highest-level insights

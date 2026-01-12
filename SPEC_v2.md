@@ -153,7 +153,7 @@ class Memory:
 
 ### Deduplication
 
-Deduplication happens during synthesis via `memory_prepare_synthesis`, not on save. This allows raw memories to be captured freely, with duplicates merged only when consolidating into higher-level insights. The merge uses Jaccard similarity (85% word overlap threshold).
+Deduplication happens during synthesis via `memory_prepare_synthesis`, not on save. This allows raw memories to be captured freely, with duplicates merged only when consolidating into higher-level insights.
 
 ---
 
@@ -288,7 +288,7 @@ After saving memories, Claude calls `memory_synthesis_needed(threshold=5)`. If i
 
 ```
 1. memory_prepare_synthesis(level=0)
-   ├─ Finds duplicate L0 memories (Jaccard >= 0.85)
+   ├─ Finds duplicate L0 memories
    ├─ MERGES them (keeps best quality, deletes rest)
    └─ Returns topic groups for synthesis
 
@@ -410,7 +410,7 @@ All configuration uses sensible defaults. No config file required.
 
 **Synthesis threshold:** 5 unsynthesized L0 memories
 
-**Deduplication threshold (synthesis):** 0.85 Jaccard similarity
+**Deduplication:** During synthesis, similar memories are merged
 
 ---
 
@@ -440,7 +440,7 @@ dependencies = [
 - [x] **Hybrid search** - BM25 FTS + semantic embeddings (sentence-transformers)
 - [x] LanceDB storage with vector column (384 dims, all-MiniLM-L6-v2)
 - [x] Auto-embedding on save and update
-- [x] Deduplication during synthesis (85% Jaccard similarity)
+- [x] Deduplication during synthesis
 - [x] 15 MCP tools including synthesis and fractal drill-down
 - [x] Hooks: UserPromptSubmit (core memory), PreCompact, Stop
 - [x] /clear-memories slash command
@@ -471,7 +471,7 @@ dependencies = [
 | Commands | Multiple /oubli:* commands | /clear-memories, /synthesize |
 | Tools | 9 tools | 15 tools |
 | Core Memory updates | After synthesis only | Immediate for fundamental changes + after synthesis |
-| Deduplication | Not specified | During synthesis via `memory_prepare_synthesis` (85% Jaccard) |
+| Deduplication | Not specified | During synthesis via `memory_prepare_synthesis` |
 | Installation | Manual plugin setup | PyPI + `oubli setup` |
 
 ---

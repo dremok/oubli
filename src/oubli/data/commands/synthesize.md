@@ -13,7 +13,7 @@ current_level = 0
 
 LOOP:
   1. Call memory_prepare_synthesis(level=current_level)
-     - This auto-merges duplicates (85% similarity threshold)
+     - This auto-merges similar duplicates
      - Returns topic groups ready for synthesis
 
   2. If no groups or < 2 memories remaining:
