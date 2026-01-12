@@ -56,11 +56,25 @@ User asks: "What do I like about jazz?"
 
 When saving a memory (`memory_save`), include:
 - **summary**: Concise 1-2 sentence summary (ALWAYS)
-- **full_text**: Complete relevant conversation with context (for Level 0)
+- **full_text**: The ACTUAL conversation text, verbatim (for Level 0) - see below
 - **topics**: Lowercase tags for grouping (e.g., "work", "music", "preferences")
 - **keywords**: Specific searchable terms
 
-The full_text should capture enough context to be useful when drilled down to later. Include relevant conversation turns, but summarize tool calls rather than including raw output.
+### CRITICAL: What goes in full_text
+
+The `full_text` field must contain the **actual conversation excerpt**, not a summary. This is the raw material for future drill-down.
+
+**WRONG** (this is just another summary):
+```
+full_text: "Discussion about film preferences. Max stated David Lynch is his favorite director."
+```
+
+**RIGHT** (actual conversation):
+```
+full_text: "User: David Lynch is probably my favourite movie director of all time. What other movies/directors should I look into?\n\nAssistant: Great taste. Lynch occupies a unique space, but here are directors who share some of his DNA:\n\nSurrealist/Dreamlike Narratives\n- Yorgos Lanthimos - The Lobster, Dogtooth...\n\nUser: Stalker has been on my list for years, I love Tarkovsky\n\nAssistant: Stalker is worth the commitment..."
+```
+
+Include the relevant user messages AND your responses. This preserves context like recommendations given, reasoning discussed, and the full exchange - not just the facts extracted from it.
 
 ## Core Memory
 
