@@ -58,11 +58,18 @@ When the user asks a question or wants help, search for context:
 - **Follow-ups** on previous topics
 
 ### Save triggers (when user states facts):
-- **Preferences**: "I like X", "I prefer Y"
-- **Personal facts**: Work, family, diet, location
-- **Opinions**: Strong views on topics
-- **Decisions**: Choices made
-- **New info about known people**: dietary restrictions, preferences, relationships
+- **Preferences**: "I like X", "I prefer Y", "I hate Z"
+- **Personal facts**: work, family, diet, location, health
+- **Opinions**: strong views on topics
+- **Decisions**: choices made
+- **Info about known people**: dietary restrictions, preferences, relationships
+- **Interests**: hobbies, curiosities, things they're learning
+- **Goals**: fitness targets, career aspirations, projects
+- **Routines**: "I work out on Tuesdays", "I wake up at 6am"
+- **Upcoming events**: trips, birthdays, appointments
+- **Skills**: languages, instruments, expertise areas
+- **Dislikes/aversions**: things to avoid, allergies
+- etc.
 
 ### Update Core Memory immediately for fundamental changes:
 - **Family info**: "My father is Anders", "I have a sister"
