@@ -46,8 +46,7 @@ Run `/synthesize` to consolidate raw memories into a hierarchy — and generate 
 
 <img width="827" height="377" alt="Screenshot 2026-01-13 at 09 04 59" src="https://github.com/user-attachments/assets/9d295e7e-6ac9-4a08-a951-eb86e2952750" />
 
-<img width="2240" height="574" alt="Screenshot 2026-01-13 at 09 03 35" src="https://github.com/user-attachments/assets/7cb33dd2-8a48-4944-b611-1a2574d855c5" />
-
+<img width="1133" height="569" alt="Screenshot 2026-01-13 at 09 03 35" src="https://github.com/user-attachments/assets/0c6a8db2-1915-4a51-a474-9356b7e34f60" />
 
 *Your memories, organized. Raw facts at the top, synthesized insights below. Filter by topic, hover for details.*
 
