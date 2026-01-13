@@ -8,6 +8,46 @@
 
 A memory system that never forgets. Persistent fractal memory for Claude Code.
 
+---
+
+## Quickstart: Bootstrap Your AI's Memory in 5 Minutes
+
+**1. Install Oubli**
+```bash
+pip install oubli && oubli setup
+```
+Start Claude Code.
+
+**2. Export what your AI already knows about you**
+
+Go to ChatGPT, Gemini, or Claude.ai and ask:
+> "Give me a complete dump of everything you know about me — preferences, facts, work, family, interests and any interesting memories from our conversations."
+
+Copy the output.
+
+**3. Import into Oubli**
+
+Paste into Claude Code and say:
+> "Import this into my memory"
+
+Claude parses and stores each fact as a searchable memory.
+
+**4. Synthesize into insights**
+
+Run `/synthesize` to consolidate raw memories into a hierarchy — and generate your Core Memory (the essential "you" that loads in every conversation).
+
+**5. Visualize your memory graph**
+
+```bash
+/visualize-memory
+```
+
+<img width="80%" alt="Memory graph visualization" src="https://github.com/user-attachments/assets/YOUR_SCREENSHOT_ID" />
+
+*Your memories, organized. Raw facts at the top, synthesized insights below. Filter by topic, hover for details.*
+
+---
+
 ## Features
 
 - **Fractal in Both Directions** - Synthesize raw memories into insights, drill down from insights to source details
