@@ -425,14 +425,17 @@ def visualize(output_path: Path = None, open_browser: bool = True) -> Path:
     """Generate and optionally open memory graph visualization.
 
     Args:
-        output_path: Where to save HTML file. Defaults to ~/.oubli/graph.html
+        output_path: Where to save HTML file. Defaults to data_dir/graph.html
         open_browser: Whether to open the file in default browser
 
     Returns:
         Path to generated HTML file
     """
+    from .config import resolve_data_dir
+
     if output_path is None:
-        output_path = Path.home() / ".oubli" / "graph.html"
+        data_dir = resolve_data_dir(prefer_local=True)
+        output_path = data_dir / "graph.html"
 
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)

@@ -163,41 +163,52 @@ Deduplication happens during synthesis via `memory_prepare_synthesis`, not on sa
 
 ```bash
 pip install oubli
-oubli setup  # Installs MCP server globally + hooks for current project
+cd /path/to/your/project
+oubli setup  # Installs everything locally in this project
 ```
 
 Then restart Claude Code.
 
-**Important**: Hooks are installed **project-locally** by default (`.claude/settings.local.json`).
-This prevents errors in projects without Oubli.
+**Everything is project-local by default.** Each project gets its own:
+- `.mcp.json` - MCP server registration
+- `.claude/` - Hooks, commands, instructions
+- `.oubli/` - Memories and Core Memory
 
-To enable Oubli in other projects:
+### Global Installation (Optional)
+
 ```bash
-cd /path/to/your/project
-oubli enable
+oubli setup --global
 ```
 
-To disable Oubli in a project:
-```bash
-cd /path/to/your/project
-oubli disable
-```
+This registers the MCP server globally and puts everything in `~/.claude/` and `~/.oubli/`.
 
 ### What Gets Installed
 
-| Component | Location | Scope | Description |
-|-----------|----------|-------|-------------|
-| MCP Server | `claude mcp` registry | Global | 15 memory tools |
-| Hooks | `.claude/settings.local.json` | **Per-project** | UserPromptSubmit, PreCompact, Stop |
-| Slash Commands | `~/.claude/commands/` | Global | `/clear-memories`, `/synthesize` |
-| Instructions | `~/.claude/CLAUDE.md` | Global | How Claude should use the memory system |
-| Data | `~/.oubli/` | Global | LanceDB database + Core Memory file |
+#### Local Installation (Default)
+
+| Component | Location | Description |
+|-----------|----------|-------------|
+| MCP Server | `.mcp.json` | 15 memory tools |
+| Hooks | `.claude/settings.local.json` | UserPromptSubmit, PreCompact, Stop |
+| Slash Commands | `.claude/commands/` | `/clear-memories`, `/synthesize`, `/visualize-memory` |
+| Instructions | `.claude/CLAUDE.md` | How Claude should use the memory system |
+| Data | `.oubli/` | LanceDB database + Core Memory file |
+
+#### Global Installation (`--global`)
+
+| Component | Location | Description |
+|-----------|----------|-------------|
+| MCP Server | `claude mcp` registry | 15 memory tools |
+| Hooks | `~/.claude/settings.json` | UserPromptSubmit, PreCompact, Stop |
+| Slash Commands | `~/.claude/commands/` | `/clear-memories`, `/synthesize`, `/visualize-memory` |
+| Instructions | `~/.claude/CLAUDE.md` | How Claude should use the memory system |
+| Data | `~/.oubli/` | LanceDB database + Core Memory file |
 
 ### Uninstall
 
 ```bash
-oubli uninstall  # Removes MCP server, global hooks, commands
-oubli disable    # (In each project) Remove project-local hooks
+oubli uninstall           # Removes local installation from current project
+oubli uninstall --global  # Removes global installation
 pip uninstall oubli
 ```
 
@@ -205,9 +216,9 @@ pip uninstall oubli
 
 ## Plugin Components
 
-### 1. Hooks (in .claude/settings.local.json)
+### 1. Hooks
 
-**Note**: Hooks are installed project-locally by default to avoid errors in projects without Oubli.
+Hooks are installed in `.claude/settings.local.json` (local) or `~/.claude/settings.json` (global).
 
 ```json
 {
@@ -240,7 +251,7 @@ pip uninstall oubli
 
 **Stop:** Prompt hook that tells Claude to save memories and optionally update Core Memory at session end.
 
-**Legacy global installation**: Use `oubli setup --global` to install hooks globally, or `oubli remove-global-hooks` to transition from global to project-local.
+**Global installation**: Use `oubli setup --global` to install globally instead of locally.
 
 ### 2. MCP Server Tools (15 total)
 

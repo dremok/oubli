@@ -14,9 +14,11 @@ A memory system that never forgets. Persistent fractal memory for Claude Code.
 
 **1. Install Oubli**
 ```bash
-pip install oubli && oubli setup
+pip install oubli
+cd /your/project
+oubli setup
 ```
-Start Claude Code.
+Restart Claude Code.
 
 **2. Export what your AI already knows about you**
 
@@ -66,27 +68,28 @@ Run `/synthesize` to consolidate raw memories into a hierarchy — and generate 
 
 ```bash
 pip install oubli
-oubli setup  # Installs MCP server globally + hooks for current project
+cd /path/to/your/project
+oubli setup  # Installs everything locally in this project
 ```
 
 Then restart Claude Code. The embedding model (~80MB) downloads on first use.
 
-**Important**: Hooks are installed **project-locally** by default (`.claude/settings.local.json`).
-This means Oubli only runs in projects where you explicitly enable it.
+**Everything is project-local by default:**
+- `.mcp.json` - MCP server registration
+- `.claude/` - Hooks, commands, instructions
+- `.oubli/` - Your memories and Core Memory
 
-### Enable in Other Projects
+This means each project has its own isolated Oubli installation and memories.
+
+### Global Installation (Optional)
+
+To install globally (shared across all projects):
 
 ```bash
-cd /path/to/your/project
-oubli enable
+oubli setup --global
 ```
 
-### Disable for a Project
-
-```bash
-cd /path/to/your/project
-oubli disable
-```
+This registers the MCP server globally and puts everything in `~/.claude/` and `~/.oubli/`.
 
 ### Requirements
 
@@ -96,8 +99,8 @@ oubli disable
 ### Uninstall
 
 ```bash
-oubli uninstall  # Removes MCP server, global hooks, commands
-oubli disable    # (In each project) Remove project-local hooks
+oubli uninstall           # Removes local installation from current project
+oubli uninstall --global  # Removes global installation
 pip uninstall oubli
 ```
 
@@ -197,7 +200,7 @@ The visualization shows:
 
 ## Data Storage
 
-All data stored locally in `~/.oubli/`:
+Data is stored in `.oubli/` (local install) or `~/.oubli/` (global install):
 
 | File | Description |
 |------|-------------|
@@ -207,14 +210,25 @@ All data stored locally in `~/.oubli/`:
 
 ## What Gets Installed
 
-| Component | Location | Scope | Description |
-|-----------|----------|-------|-------------|
-| MCP Server | `claude mcp` | Global | 15 memory tools |
-| Hooks | `.claude/settings.local.json` | **Per-project** | UserPromptSubmit, PreCompact, Stop |
-| Commands | `~/.claude/commands/` | Global | `/clear-memories`, `/synthesize` |
-| Instructions | `~/.claude/CLAUDE.md` | Global | How Claude uses the memory system |
+### Local Installation (Default)
 
-**Note**: Hooks are project-local by default. Use `oubli enable` in each project where you want Oubli.
+| Component | Location | Description |
+|-----------|----------|-------------|
+| MCP Server | `.mcp.json` | 15 memory tools |
+| Hooks | `.claude/settings.local.json` | UserPromptSubmit, PreCompact, Stop |
+| Commands | `.claude/commands/` | `/clear-memories`, `/synthesize`, `/visualize-memory` |
+| Instructions | `.claude/CLAUDE.md` | How Claude uses the memory system |
+| Data | `.oubli/` | Memories and Core Memory |
+
+### Global Installation (`--global`)
+
+| Component | Location | Description |
+|-----------|----------|-------------|
+| MCP Server | `claude mcp` registry | 15 memory tools |
+| Hooks | `~/.claude/settings.json` | UserPromptSubmit, PreCompact, Stop |
+| Commands | `~/.claude/commands/` | `/clear-memories`, `/synthesize`, `/visualize-memory` |
+| Instructions | `~/.claude/CLAUDE.md` | How Claude uses the memory system |
+| Data | `~/.oubli/` | Memories and Core Memory |
 
 ## MCP Tools
 

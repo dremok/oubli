@@ -73,76 +73,110 @@ def main():
     pass
 
 
+def get_mcp_config(project_dir: Path) -> dict:
+    """Generate .mcp.json content for local MCP server registration."""
+    return {
+        "mcpServers": {
+            "oubli": {
+                "command": "python",
+                "args": ["-m", "oubli.mcp_server"],
+                "cwd": str(project_dir)
+            }
+        }
+    }
+
+
 @main.command()
 @click.option("--global", "install_global", is_flag=True,
-              help="Install hooks globally (default: project-local)")
+              help="Install globally instead of project-local (default: local)")
 def setup(install_global):
     """Set up Oubli for Claude Code.
 
-    This command:
-    1. Registers the MCP server with Claude Code (global)
-    2. Sets up hooks (project-local by default, or global with --global)
-    3. Installs slash commands (global)
-    4. Installs CLAUDE.md instructions (global)
-    5. Creates the data directory (global)
+    By default, installs everything locally in the current project:
+    - .mcp.json (MCP server registration)
+    - .claude/settings.local.json (hooks)
+    - .claude/commands/ (slash commands)
+    - .claude/CLAUDE.md (instructions)
+    - .oubli/ (data directory)
+
+    Use --global to install globally instead (MCP server, commands, instructions
+    in ~/.claude/, data in ~/.oubli/).
     """
-    claude_dir = Path.home() / ".claude"
-    oubli_dir = Path.home() / ".oubli"
+    project_dir = Path.cwd()
     data_path = get_package_data_path()
+
+    if install_global:
+        claude_dir = Path.home() / ".claude"
+        oubli_dir = Path.home() / ".oubli"
+        scope = "global"
+    else:
+        claude_dir = project_dir / ".claude"
+        oubli_dir = project_dir / ".oubli"
+        scope = "local"
 
     version = get_version()
     click.echo(f"Setting up Oubli v{version} - Fractal Memory System for Claude Code")
+    click.echo(f"Installation scope: {scope}")
     click.echo("=" * 60)
 
     # 1. Register MCP server
     click.echo("\n1. Registering MCP server...")
-    result = subprocess.run(
-        ["claude", "mcp", "add", "oubli", "--", "python", "-m", "oubli.mcp_server"],
-        capture_output=True,
-        text=True
-    )
-    if result.returncode == 0:
-        click.echo("   MCP server registered successfully")
+    if install_global:
+        # Global: use claude mcp add
+        result = subprocess.run(
+            ["claude", "mcp", "add", "oubli", "--", "python", "-m", "oubli.mcp_server"],
+            capture_output=True,
+            text=True
+        )
+        if result.returncode == 0:
+            click.echo("   MCP server registered globally via 'claude mcp add'")
+        else:
+            click.echo("   MCP server already registered or error occurred")
     else:
-        click.echo("   MCP server already registered or error occurred")
+        # Local: create .mcp.json
+        mcp_config_path = project_dir / ".mcp.json"
+        mcp_config = get_mcp_config(project_dir)
+
+        if mcp_config_path.exists():
+            # Merge with existing
+            with open(mcp_config_path) as f:
+                existing = json.load(f)
+            if "mcpServers" not in existing:
+                existing["mcpServers"] = {}
+            existing["mcpServers"]["oubli"] = mcp_config["mcpServers"]["oubli"]
+            mcp_config = existing
+
+        with open(mcp_config_path, "w") as f:
+            json.dump(mcp_config, f, indent=2)
+        click.echo(f"   MCP server configured in .mcp.json")
 
     # 2. Set up hooks
     click.echo("\n2. Setting up hooks...")
-    if install_global:
-        # Global installation
-        claude_dir.mkdir(exist_ok=True)
-        settings_path = claude_dir / "settings.json"
+    claude_dir.mkdir(exist_ok=True)
 
+    if install_global:
+        settings_path = claude_dir / "settings.json"
         if settings_path.exists():
             click.echo("   Backing up existing settings.json")
             shutil.copy(settings_path, claude_dir / "settings.json.bak")
-
         with open(settings_path, "w") as f:
             json.dump(HOOKS_CONFIG, f, indent=2)
-        click.echo("   Hooks configured in ~/.claude/settings.json (global)")
+        click.echo("   Hooks configured in ~/.claude/settings.json")
     else:
-        # Project-local installation
-        local_claude_dir = Path.cwd() / ".claude"
-        local_claude_dir.mkdir(exist_ok=True)
-        local_settings_path = local_claude_dir / "settings.local.json"
-
-        if local_settings_path.exists():
-            # Merge with existing settings
-            with open(local_settings_path) as f:
+        settings_path = claude_dir / "settings.local.json"
+        if settings_path.exists():
+            with open(settings_path) as f:
                 existing = json.load(f)
-
-            # Merge hooks
             if "hooks" not in existing:
                 existing["hooks"] = {}
             existing["hooks"].update(HOOKS_CONFIG["hooks"])
-
-            with open(local_settings_path, "w") as f:
+            with open(settings_path, "w") as f:
                 json.dump(existing, f, indent=2)
             click.echo("   Hooks merged into .claude/settings.local.json")
         else:
-            with open(local_settings_path, "w") as f:
+            with open(settings_path, "w") as f:
                 json.dump(HOOKS_CONFIG, f, indent=2)
-            click.echo("   Hooks configured in .claude/settings.local.json (project-local)")
+            click.echo("   Hooks configured in .claude/settings.local.json")
 
     # 3. Install slash commands
     click.echo("\n3. Installing slash commands...")
@@ -163,7 +197,7 @@ def setup(install_global):
     dst_claude_md = claude_dir / "CLAUDE.md"
     if src_claude_md.exists():
         shutil.copy(src_claude_md, dst_claude_md)
-        click.echo("   CLAUDE.md installed to ~/.claude/")
+        click.echo(f"   CLAUDE.md installed to {claude_dir}/")
     else:
         click.echo("   Warning: CLAUDE.md not found in package data")
 
@@ -173,14 +207,17 @@ def setup(install_global):
     click.echo(f"   Data directory: {oubli_dir}")
 
     # Summary
-    click.echo("\n" + "=" * 55)
+    click.echo("\n" + "=" * 60)
     click.echo("Setup complete!")
+    click.echo(f"\nInstallation type: {scope.upper()}")
     click.echo("\nWhat was installed:")
-    click.echo("  - MCP server: oubli (15 memory tools)")
-    hook_scope = "global" if install_global else "project-local"
-    click.echo(f"  - Hooks: UserPromptSubmit, PreCompact, Stop ({hook_scope})")
+    if install_global:
+        click.echo("  - MCP server: registered via 'claude mcp add'")
+    else:
+        click.echo("  - MCP server: .mcp.json")
+    click.echo("  - Hooks: UserPromptSubmit, PreCompact, Stop")
     click.echo("  - Slash commands: /clear-memories, /synthesize, /visualize-memory")
-    click.echo("  - Instructions: ~/.claude/CLAUDE.md")
+    click.echo(f"  - Instructions: {claude_dir}/CLAUDE.md")
     click.echo(f"  - Data directory: {oubli_dir}")
     click.echo("\nRestart Claude Code to start using Oubli.")
 
@@ -308,69 +345,103 @@ def remove_global_hooks():
 
 
 @main.command()
-def uninstall():
+@click.option("--global", "uninstall_global", is_flag=True,
+              help="Uninstall global installation instead of local")
+def uninstall(uninstall_global):
     """Remove Oubli from Claude Code.
 
-    This command:
-    1. Removes the MCP server registration
-    2. Removes global hooks from settings.json (if present)
-    3. Removes slash commands
-    4. Removes CLAUDE.md
+    By default, removes local installation from current project:
+    - .mcp.json (removes oubli entry)
+    - .claude/settings.local.json (removes hooks)
+    - .claude/commands/ (removes slash commands)
+    - .claude/CLAUDE.md
 
-    Note: Data in ~/.oubli/ is NOT deleted (your memories are preserved).
-    Note: Project-local hooks (.claude/settings.local.json) are NOT removed.
+    Use --global to remove global installation instead.
+
+    Note: Data (.oubli/) is NOT deleted to preserve your memories.
     """
-    claude_dir = Path.home() / ".claude"
+    project_dir = Path.cwd()
 
-    click.echo("Uninstalling Oubli from Claude Code")
+    if uninstall_global:
+        claude_dir = Path.home() / ".claude"
+        oubli_dir = Path.home() / ".oubli"
+        scope = "global"
+    else:
+        claude_dir = project_dir / ".claude"
+        oubli_dir = project_dir / ".oubli"
+        scope = "local"
+
+    click.echo(f"Uninstalling Oubli ({scope})")
     click.echo("=" * 40)
 
     # 1. Remove MCP server
     click.echo("\n1. Removing MCP server...")
-    result = subprocess.run(
-        ["claude", "mcp", "remove", "oubli"],
-        capture_output=True,
-        text=True
-    )
-    if result.returncode == 0:
-        click.echo("   MCP server removed")
+    if uninstall_global:
+        result = subprocess.run(
+            ["claude", "mcp", "remove", "oubli"],
+            capture_output=True,
+            text=True
+        )
+        if result.returncode == 0:
+            click.echo("   MCP server removed from global registry")
+        else:
+            click.echo("   MCP server not found or error occurred")
     else:
-        click.echo("   MCP server not found or error occurred")
+        mcp_config_path = project_dir / ".mcp.json"
+        if mcp_config_path.exists():
+            with open(mcp_config_path) as f:
+                config = json.load(f)
+            if "mcpServers" in config and "oubli" in config["mcpServers"]:
+                del config["mcpServers"]["oubli"]
+                if config["mcpServers"]:
+                    with open(mcp_config_path, "w") as f:
+                        json.dump(config, f, indent=2)
+                else:
+                    mcp_config_path.unlink()
+                click.echo("   Oubli removed from .mcp.json")
+            else:
+                click.echo("   Oubli not found in .mcp.json")
+        else:
+            click.echo("   No .mcp.json found")
 
-    # 2. Remove global hooks (but keep backup)
-    click.echo("\n2. Removing global hooks...")
-    settings_path = claude_dir / "settings.json"
-    backup_path = claude_dir / "settings.json.bak"
+    # 2. Remove hooks
+    click.echo("\n2. Removing hooks...")
+    if uninstall_global:
+        settings_path = claude_dir / "settings.json"
+    else:
+        settings_path = claude_dir / "settings.local.json"
 
     if settings_path.exists():
         with open(settings_path) as f:
             settings = json.load(f)
 
         if "hooks" in settings:
-            # Backup before removing
-            shutil.copy(settings_path, backup_path)
-
-            # Remove Oubli hooks
+            hooks_removed = []
             for hook_name in ["UserPromptSubmit", "PreCompact", "Stop"]:
                 if hook_name in settings["hooks"]:
                     del settings["hooks"][hook_name]
+                    hooks_removed.append(hook_name)
 
-            with open(settings_path, "w") as f:
-                json.dump(settings, f, indent=2)
-            click.echo("   Global hooks removed (backup saved)")
+            if hooks_removed:
+                with open(settings_path, "w") as f:
+                    json.dump(settings, f, indent=2)
+                click.echo(f"   Removed hooks: {', '.join(hooks_removed)}")
+            else:
+                click.echo("   No Oubli hooks found")
         else:
-            click.echo("   No hooks found in global settings")
+            click.echo("   No hooks found in settings")
     else:
-        click.echo("   No global settings.json found")
+        click.echo(f"   No {settings_path.name} found")
 
     # 3. Remove slash commands
     click.echo("\n3. Removing slash commands...")
+    commands_dir = claude_dir / "commands"
     oubli_commands = ["clear-memories.md", "synthesize.md", "visualize-memory.md"]
     for cmd_name in oubli_commands:
-        command_path = claude_dir / "commands" / cmd_name
+        command_path = commands_dir / cmd_name
         if command_path.exists():
             command_path.unlink()
-            click.echo(f"   /{cmd_name.replace('.md', '')} command removed")
+            click.echo(f"   /{cmd_name.replace('.md', '')} removed")
 
     # 4. Remove CLAUDE.md
     click.echo("\n4. Removing CLAUDE.md...")
@@ -378,14 +449,14 @@ def uninstall():
     if claude_md_path.exists():
         claude_md_path.unlink()
         click.echo("   CLAUDE.md removed")
+    else:
+        click.echo("   CLAUDE.md not found")
 
     # Summary
     click.echo("\n" + "=" * 40)
     click.echo("Uninstall complete!")
-    click.echo("\nNote: Your memories in ~/.oubli/ were NOT deleted.")
-    click.echo("Note: Project-local hooks (.claude/settings.local.json) were NOT removed.")
-    click.echo("      Use 'oubli disable' in each project to remove them.")
-    click.echo("\nTo completely remove all data, run: rm -rf ~/.oubli/")
+    click.echo(f"\nNote: Your memories in {oubli_dir}/ were NOT deleted.")
+    click.echo(f"To remove all data: rm -rf {oubli_dir}/")
     click.echo("To fully uninstall the package: pip uninstall oubli")
 
 

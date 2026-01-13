@@ -18,26 +18,40 @@ A Claude Code plugin that provides persistent, hierarchical memory with fractal 
 - **sentence-transformers by default** - `all-MiniLM-L6-v2` for semantic search (~80MB, downloads on first use)
 - **MCP tools are simple CRUD** - Claude Code does the intelligent work (parsing, clustering, summarizing)
 - **Slash command for destructive ops** - `/clear-memories` requires explicit user invocation
-- **Core Memory is a markdown file** - `~/.oubli/core_memory.md`, human-readable and editable
+- **Core Memory is a markdown file** - `.oubli/core_memory.md`, human-readable and editable
 - **Everything runs locally** - No external services, no API keys needed
+- **Project-local by default** - Each project has isolated installation and memories
 
 ## Installation
 
 ```bash
 pip install oubli
-oubli setup
+cd /path/to/project
+oubli setup           # Local install (default)
+oubli setup --global  # Global install (optional)
 ```
 
 Then restart Claude Code.
 
-The setup command installs:
-1. **MCP server** - Registered via `claude mcp add` (15 tools)
-2. **Hooks** - Written to `~/.claude/settings.json` (UserPromptSubmit, PreCompact, Stop)
-3. **Slash commands** - `/clear-memories` and `/synthesize` copied to `~/.claude/commands/`
-4. **CLAUDE.md** - Instructions copied to `~/.claude/CLAUDE.md`
-5. **Data directory** - `~/.oubli/` created
+### Local Installation (Default)
 
-To uninstall: `oubli uninstall && pip uninstall oubli`
+Everything in the project directory:
+- `.mcp.json` - MCP server registration
+- `.claude/settings.local.json` - Hooks
+- `.claude/commands/` - Slash commands
+- `.claude/CLAUDE.md` - Instructions
+- `.oubli/` - Data directory
+
+### Global Installation (`--global`)
+
+Everything shared across projects:
+- MCP server via `claude mcp add`
+- `~/.claude/settings.json` - Hooks
+- `~/.claude/commands/` - Slash commands
+- `~/.claude/CLAUDE.md` - Instructions
+- `~/.oubli/` - Data directory
+
+To uninstall: `oubli uninstall` (or `oubli uninstall --global`) then `pip uninstall oubli`
 
 ## Package Structure
 
@@ -45,15 +59,18 @@ To uninstall: `oubli uninstall && pip uninstall oubli`
 src/oubli/
 ├── __init__.py
 ├── cli.py              # CLI with setup/uninstall commands
+├── config.py           # Data directory resolution (local vs global)
 ├── mcp_server.py       # MCP tools for Claude Code (15 tools)
 ├── storage.py          # LanceDB storage with hybrid search
 ├── embeddings.py       # Sentence-transformers integration via LanceDB registry
 ├── core_memory.py      # Core memory file operations
+├── viz.py              # Memory graph visualization
 └── data/
-    ├── CLAUDE.md       # Instructions installed to ~/.claude/
+    ├── CLAUDE.md       # Instructions installed to .claude/
     └── commands/
-        ├── clear-memories.md  # /clear-memories slash command
-        └── synthesize.md      # /synthesize skill
+        ├── clear-memories.md    # /clear-memories slash command
+        ├── synthesize.md        # /synthesize skill
+        └── visualize-memory.md  # /visualize-memory command
 ```
 
 ## Key Files
