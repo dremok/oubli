@@ -11,21 +11,35 @@ from mcp.server.fastmcp import FastMCP
 
 from .storage import MemoryStore
 from .core_memory import load_core_memory, save_core_memory, core_memory_exists
+from .embeddings import warmup_embeddings
 
 
 # Initialize MCP server
 mcp = FastMCP("oubli")
 
-# Global store instance (initialized lazily)
+# Global store instance (initialized eagerly at import)
 _store: Optional[MemoryStore] = None
 
 
-def get_store() -> MemoryStore:
-    """Get or create the memory store."""
+def _init_store() -> MemoryStore:
+    """Initialize the memory store eagerly to warm up embeddings."""
     global _store
     if _store is None:
         _store = MemoryStore()
     return _store
+
+
+def get_store() -> MemoryStore:
+    """Get the memory store (already initialized at import)."""
+    global _store
+    if _store is None:
+        _store = _init_store()
+    return _store
+
+
+# Warm up store and embedding model at import time
+_init_store()
+warmup_embeddings()
 
 
 # ============================================================================

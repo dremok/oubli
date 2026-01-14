@@ -148,6 +148,9 @@ class MemoryStore:
         except ImportError:
             pass  # sentence-transformers not installed
 
+        # Track FTS index state
+        self._fts_index_ensured = False
+
         # Create or open table
         self._init_table()
 
@@ -208,7 +211,13 @@ class MemoryStore:
             pass
 
     def _ensure_fts_index(self):
-        """Create native FTS index on summary (supports incremental updates)."""
+        """Create native FTS index on summary (supports incremental updates).
+
+        Only checks/creates once per session for performance.
+        """
+        if self._fts_index_ensured:
+            return
+
         try:
             indices = self.table.list_indices()
             fts_exists = any(
@@ -218,9 +227,11 @@ class MemoryStore:
             if not fts_exists:
                 # Use native FTS (not tantivy) for incremental indexing support
                 self.table.create_fts_index('summary', use_tantivy=False, replace=True)
+            self._fts_index_ensured = True
         except Exception:
             try:
                 self.table.create_fts_index('summary', use_tantivy=False, replace=True)
+                self._fts_index_ensured = True
             except Exception:
                 pass  # Index may already exist or table is empty
 

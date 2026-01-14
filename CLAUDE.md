@@ -15,6 +15,8 @@ Examples of crucial info:
 - Publishing and deployment workflows
 - Project-specific operational commands
 
+**Never say "I'll remember that" without actually persisting it.** If something is worth remembering, edit this file immediately.
+
 ## Working Style Preferences
 
 - **Rapid prototyping** - Get working features fast, avoid over-engineering upfront
@@ -124,7 +126,7 @@ src/oubli/
 - **PreCompact** - Saves memories before context compaction (prevents losing info in long sessions)
 - **Stop** - Saves memories at session end
 
-## Current Status (v0.4.7)
+## Current Status (v0.4.8)
 
 ### Completed
 - PyPI installation (`pip install oubli && oubli setup`)
@@ -194,7 +196,7 @@ When the user asks to publish a new version:
 4. **Push** to GitHub: `git push`
 5. **Confirm** with PyPI URL: `https://pypi.org/project/oubli/<version>/`
 
-User can then upgrade in other projects: `pip install --upgrade oubli`
+User can then upgrade in other projects: `pip install --upgrade oubli && oubli setup`
 
 ## Data Storage
 

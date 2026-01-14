@@ -90,3 +90,18 @@ def generate_query_embedding(text: str) -> Optional[list[float]]:
 def embeddings_available() -> bool:
     """Check if embeddings are available (sentence-transformers installed)."""
     return get_embedding_model() is not None
+
+
+def warmup_embeddings() -> bool:
+    """Warm up embedding model by generating a test embedding.
+
+    Call this at startup to avoid ~5s delay on first query.
+
+    Returns:
+        True if warmup succeeded, False otherwise.
+    """
+    try:
+        result = generate_query_embedding("warmup")
+        return result is not None
+    except Exception:
+        return False

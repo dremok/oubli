@@ -1,6 +1,6 @@
 [project]
 name = "oubli"
-version = "0.4.7"
+version = "0.4.8"
 description = "Fractal memory system for Claude Code"
 readme = "README.md"
 license = { text = "MIT" }
