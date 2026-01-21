@@ -10,6 +10,12 @@ A memory system that never forgets. Persistent fractal memory for Claude Code.
 
 ---
 
+## Demo of memory visualization
+
+https://youtu.be/ITSMAu5MS-s?si=0EYJqfHC4yTWQoxi
+
+---
+
 ## Quickstart: Bootstrap Your AI's Memory in 5 Minutes
 
 **1. Install Oubli**
