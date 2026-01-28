@@ -126,7 +126,7 @@ src/oubli/
 - **PreCompact** - Saves memories before context compaction (prevents losing info in long sessions)
 - **Stop** - Saves memories at session end
 
-## Current Status (v0.4.8)
+## Current Status (v0.4.9)
 
 ### Completed
 - PyPI installation (`pip install oubli && oubli setup`)
@@ -148,7 +148,10 @@ src/oubli/
 - Instructions for Claude in `src/oubli/data/CLAUDE.md`
 - Fractal drill-down retrieval pattern
 - **Memory graph visualization** (`oubli viz` / `/visualize-memory`)
+- **Fractal zoom visualization** (`oubli fractal`) for marketing demos
 - **Diagnostic command** (`oubli doctor`) for troubleshooting
+- **Hook management** (`oubli enable` / `oubli disable`) for existing projects
+- **Animated logo** (`oubli logo`)
 
 ### Not Yet Implemented
 - Web UI for browsing memories
@@ -168,6 +171,14 @@ oubli doctor
 
 # Visualize memory graph
 oubli viz
+
+# Fractal zoom visualization (marketing demos)
+oubli fractal
+oubli fractal --demo  # Uses demo data
+
+# Hook management
+oubli enable   # Add hooks to existing project
+oubli disable  # Remove hooks from project
 
 # Run tests
 python -c "from oubli.storage import MemoryStore; store = MemoryStore(); print(store.get_stats())"

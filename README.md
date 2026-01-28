@@ -187,6 +187,11 @@ oubli setup            # Set up Oubli in current project
 oubli doctor           # Diagnose installation issues
 oubli viz              # Open interactive memory graph in browser
 oubli viz --no-open    # Generate graph.html without opening
+oubli fractal          # Launch fractal zoom visualization
+oubli fractal --demo   # Fractal viz with demo data (marketing)
+oubli enable           # Add hooks to existing project
+oubli disable          # Remove hooks from project
+oubli logo             # Display animated logo
 ```
 
 **Troubleshooting with `oubli doctor`:**
