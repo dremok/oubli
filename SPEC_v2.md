@@ -41,7 +41,7 @@ Level 0   ○ ○ ○ ○  Raw conversation chunks with full text
 
 ### Core Memory
 
-The Core Memory is a special, always-present context block (~2K tokens) that contains the most essential information about the user. Unlike regular memories that are retrieved on-demand, Core Memory is injected into every conversation via the UserPromptSubmit hook.
+The Core Memory is a special, always-present context block (~2K tokens) that contains the most essential information about the user. Unlike regular memories that are retrieved on-demand, Core Memory is injected once at session start via the SessionStart hook.
 
 **Contents:**
 - Identity: Name, location, key relationships
@@ -188,7 +188,7 @@ This registers the MCP server globally and puts everything in `~/.claude/` and `
 | Component | Location | Description |
 |-----------|----------|-------------|
 | MCP Server | `.mcp.json` | 15 memory tools |
-| Hooks | `.claude/settings.local.json` | UserPromptSubmit, PreCompact, Stop |
+| Hooks | `.claude/settings.local.json` | SessionStart, PreCompact, Stop |
 | Slash Commands | `.claude/commands/` | `/clear-memories`, `/synthesize`, `/visualize-memory` |
 | Instructions | `.claude/CLAUDE.md` | How Claude should use the memory system |
 | Data | `.oubli/` | LanceDB database + Core Memory file |
@@ -198,7 +198,7 @@ This registers the MCP server globally and puts everything in `~/.claude/` and `
 | Component | Location | Description |
 |-----------|----------|-------------|
 | MCP Server | `claude mcp` registry | 15 memory tools |
-| Hooks | `~/.claude/settings.json` | UserPromptSubmit, PreCompact, Stop |
+| Hooks | `~/.claude/settings.json` | SessionStart, PreCompact, Stop |
 | Slash Commands | `~/.claude/commands/` | `/clear-memories`, `/synthesize`, `/visualize-memory` |
 | Instructions | `~/.claude/CLAUDE.md` | How Claude should use the memory system |
 | Data | `~/.oubli/` | LanceDB database + Core Memory file |
@@ -222,7 +222,7 @@ Hooks are installed in `.claude/settings.local.json` (local) or `~/.claude/setti
 ```json
 {
   "hooks": {
-    "UserPromptSubmit": [{
+    "SessionStart": [{
       "hooks": [{
         "type": "command",
         "command": "python -m oubli.cli inject-context"
@@ -244,7 +244,7 @@ Hooks are installed in `.claude/settings.local.json` (local) or `~/.claude/setti
 }
 ```
 
-**UserPromptSubmit:** Command hook that runs CLI to inject Core Memory (~2K tokens) into every prompt via `additionalContext`.
+**SessionStart:** Command hook that runs CLI to inject Core Memory (~2K tokens) once at session start via `additionalContext`.
 
 **PreCompact:** Prompt hook that tells Claude to save memories before context compaction.
 
@@ -365,7 +365,7 @@ Claude checks Core Memory before searching:
 User prompt arrives
         │
         ▼
-Core Memory already in context (from UserPromptSubmit hook)
+Core Memory already in context (from SessionStart hook)
         │
         ▼
 ┌───────────────────────────────────────┐
@@ -396,7 +396,7 @@ or memory_get(id) for full_text         │
 
 | Source | Tokens | When Loaded |
 |--------|--------|-------------|
-| Core Memory | ~2,000 | Always (UserPromptSubmit hook) |
+| Core Memory | ~2,000 | Always (SessionStart hook) |
 | Query-relevant memories | ~1,000 | On-demand during conversation |
 | Full text retrieval | Variable | On-demand when detail needed |
 
@@ -474,7 +474,7 @@ dependencies = [
 - [x] Auto-embedding on save and update
 - [x] Deduplication during synthesis
 - [x] 15 MCP tools including synthesis and fractal drill-down
-- [x] Hooks: UserPromptSubmit (core memory), PreCompact, Stop
+- [x] Hooks: SessionStart (core memory), PreCompact, Stop
 - [x] /clear-memories slash command
 - [x] /synthesize skill with Core Memory update
 - [x] Synthesis via /synthesize command (user-triggered)
@@ -500,7 +500,7 @@ dependencies = [
 | Embeddings | sentence-transformers | all-MiniLM-L6-v2 (384 dims) |
 | Subagents | Synthesizer subagent | Inline synthesis via tools |
 | Skills | memory-awareness skill | Proactive behavior in CLAUDE.md |
-| Hooks | SessionStart, Stop | UserPromptSubmit, PreCompact, Stop |
+| Hooks | SessionStart, Stop | SessionStart, PreCompact, Stop |
 | Commands | Multiple /oubli:* commands | /clear-memories, /synthesize |
 | Tools | 9 tools | 15 tools |
 | Core Memory updates | After synthesis only | Immediate for fundamental changes + after synthesis |

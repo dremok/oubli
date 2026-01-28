@@ -122,7 +122,7 @@ src/oubli/
 
 ## Hooks
 
-- **UserPromptSubmit** - Injects Core Memory into every prompt
+- **SessionStart** - Injects Core Memory once at session start (not repeated each turn)
 - **PreCompact** - Saves memories before context compaction (prevents losing info in long sessions)
 - **Stop** - Saves memories at session end
 
@@ -139,7 +139,7 @@ src/oubli/
 - CRUD operations (add, get, search, update, delete)
 - Core memory file operations
 - MCP server with 15 tools (including synthesis and fractal drill-down)
-- Session hooks (UserPromptSubmit for core memory, PreCompact + Stop for auto-save)
+- Session hooks (SessionStart for core memory, PreCompact + Stop for auto-save)
 - `/clear-memories` slash command
 - `/synthesize` skill for full synthesis workflow
 - `memory_synthesis_needed` to check if synthesis would be useful

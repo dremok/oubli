@@ -220,7 +220,7 @@ Data is stored globally in `~/.oubli/` (shared across all projects):
 | Component | Location | Description |
 |-----------|----------|-------------|
 | MCP Server | `.mcp.json` | 15 memory tools |
-| Hooks | `.claude/settings.local.json` | UserPromptSubmit, PreCompact, Stop |
+| Hooks | `.claude/settings.local.json` | SessionStart, PreCompact, Stop |
 | Commands | `.claude/commands/` | `/clear-memories`, `/synthesize`, `/visualize-memory` |
 | Instructions | `.claude/CLAUDE.md` | How Claude uses the memory system |
 

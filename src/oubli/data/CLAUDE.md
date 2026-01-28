@@ -27,7 +27,7 @@ Level 0    ○○○○ Raw memories with full conversation text
 
 ## Core Memory First
 
-Core Memory (~2K tokens) is auto-injected into every prompt. **Check it first**:
+Core Memory (~2K tokens) is auto-injected at session start. **Check it first**:
 - If Core Memory answers the question → respond directly, no search needed
 - If you need more detail → then search memories
 

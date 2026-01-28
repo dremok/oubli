@@ -22,7 +22,7 @@ from .viz import visualize
 # Hooks configuration
 HOOKS_CONFIG = {
     "hooks": {
-        "UserPromptSubmit": [
+        "SessionStart": [
             {
                 "hooks": [
                     {
@@ -195,7 +195,7 @@ def setup():
     click.echo("Setup complete!")
     click.echo("\nWhat was installed:")
     click.echo("  - MCP server: .mcp.json")
-    click.echo("  - Hooks: UserPromptSubmit, PreCompact, Stop")
+    click.echo("  - Hooks: SessionStart, PreCompact, Stop")
     click.echo("  - Slash commands: /clear-memories, /synthesize, /visualize-memory")
     click.echo(f"  - Instructions: .claude/CLAUDE.md")
     click.echo(f"  - Data directory: {oubli_dir} (global, shared)")
@@ -262,7 +262,7 @@ def disable():
 
     # Remove Oubli hooks
     hooks_removed = []
-    for hook_name in ["UserPromptSubmit", "PreCompact", "Stop"]:
+    for hook_name in ["SessionStart", "PreCompact", "Stop"]:
         if hook_name in settings["hooks"]:
             del settings["hooks"][hook_name]
             hooks_removed.append(hook_name)
@@ -325,7 +325,7 @@ def uninstall():
 
         if "hooks" in settings:
             hooks_removed = []
-            for hook_name in ["UserPromptSubmit", "PreCompact", "Stop"]:
+            for hook_name in ["SessionStart", "PreCompact", "Stop"]:
                 if hook_name in settings["hooks"]:
                     del settings["hooks"][hook_name]
                     hooks_removed.append(hook_name)
@@ -461,7 +461,7 @@ def doctor():
         with open(settings_path) as f:
             settings = json.load(f)
         hooks = settings.get("hooks", {})
-        oubli_hooks = ["UserPromptSubmit", "PreCompact", "Stop"]
+        oubli_hooks = ["SessionStart", "PreCompact", "Stop"]
         found = [h for h in oubli_hooks if h in hooks]
         if len(found) == 3:
             click.echo("   ✓ All hooks configured")
@@ -492,7 +492,7 @@ def inject_context():
 
     output = {
         "hookSpecificOutput": {
-            "hookEventName": "UserPromptSubmit",
+            "hookEventName": "SessionStart",
             "additionalContext": additional_context
         }
     }
